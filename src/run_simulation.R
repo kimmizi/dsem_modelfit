@@ -40,11 +40,11 @@ cores <- 1
 
 # Number of people / time point?
 person_size_SIMULATE <- c(91)
-#person_size_SIMULATE <- c(91,121, 151, 181,211,501,1001,1501,2001,2501,61,31)
+#person_size_SIMULATE <- c(91, 121, 151, 181, 211, 501, 1001, 1501, 2001, 2501, 61, 31)
 
 # Number of measurement time points
 time_point_SIMULATE <- 15 # Nt
-#time_point_SIMULATE <- c(1:5,10,15) # Nt
+#time_point_SIMULATE <- c(1:5, 10, 15) # Nt
 
 # Size of crossloading (indicating misfit)
 model_TRUE_MISS_SIMULATE <- c(.3,.6)
@@ -57,12 +57,12 @@ run_Samples_SIMULATE <- 3
 
 # DSEM model params
 phi0 <- diag(2)*.7+.3 # cov(eta)
-mu0  <- c(0,0)        #mean(eta)
-ar0  <- c(.3,.3)      # ar(1) structure
+mu0  <- c(0, 0)        # mean(eta)
+ar0  <- c(.3, .3)      # ar(1) structure
 ly00 <- .6
-ly0  <- matrix(c(ly00,ly00,ly00,0,0,0,
-                 0,0,0,ly00,ly00,ly00),6,2,byrow=F) # factor loadings
-td   <- diag(6)*(1-ly00^2) # cond. var(y) -> res var
+ly0  <- matrix(c(ly00, ly00, ly00, 0, 0, 0,
+                 0, 0, 0, ly00, ly00, ly00), 6, 2, byrow = F) # factor loadings
+td   <- diag(6)*(1 - ly00^2) # cond. var(y) -> res var
 
 # Fit indices
 fitnom <- c("npar","fmin","chisq","df","pvalue","baseline.chisq","baseline.df",
@@ -87,113 +87,169 @@ core <- 1
 # Input: data y0
 # Output: model res1
 fit_model <- function(y0){ 
-  res1 <- try(sem(dsem[[time_point]], data=y0,std.lv = TRUE), silent = TRUE)
-  if(!inherits(res1, "try-error")){
-    if(res1@optim$converged==T){
+  
+  res1 <- try(sem(dsem[[time_point]], data = y0, std.lv = TRUE), silent = TRUE)
+  
+  if(!inherits(res1, "try-error")){ # if there is no try-error
+    
+    if(res1@optim$converged == T){ # if model converged: save fit indices
       fitmeasures(res1)  
-    }else{rep(NA,46)}
-  }else{rep(NA,46)}
+    }
+    else{ # if model did not converge: save NAs
+      rep(NA, 46)
+      }
+  }
+  else{ # if there is a try-error: save NAs
+    rep(NA, 46)
+    }
 }
 
 # what does this line do?
 #diag((ly0)%*%phi0%*%t(ly0)+td)
 
-# HUge loop iterating over all simulation combinations
+# Huge loop iterating over all simulation combinations
 
-for (person_size in person_size_SIMULATE) { 
-  for (time_point in time_point_SIMULATE) {
-    if(time_point*6<person_size){ #checking if N_t+p < Nt? Specification requirement
+for (person_size in person_size_SIMULATE) { # looping over persons
+  
+  for (time_point in time_point_SIMULATE) { # looping over time points
+    
+    if(time_point*6 < person_size){ # checking if N_t+p < Nt? Specification requirement
       
       for(type_MISS in type_TRUE_MISS_SIMULATE){ # check each misfit type
       
+      # set core specific seed
+      set.seed(131212023 + core + person_size + time_point*1000 + as.numeric(as.factor(type_MISS))*10000)
+
+        
       #####################################################################
-      #set core specific seed
-      set.seed(131212023+core+person_size+time_point*1000+as.numeric(as.factor(type_MISS))*10000)
-      #####################################################################
-      
-      #####################################################################
-      if(type_MISS=="none"){#core<-1
+      if(type_MISS == "none"){ # core <- 1
+        
+        # there are no missspecifications
         model_TRUE_MISS <- 0
-        name_local_SIMULATE_Info <- paste("C:\\holger\\SEM\\modelfit\\stanversion\\results_lavaan_version03_rand\\local", as.character(person_size), 
-                                          as.character(time_point),as.character(type_MISS),as.character(model_TRUE_MISS),core ,"_version03_rand", sep = "_")
+        
+        # save in current directory
+        name_local_SIMULATE_Info <- paste(current_dir, as.character(person_size), as.character(time_point), as.character(type_MISS), 
+                                          as.character(model_TRUE_MISS), core, "_version03_rand", sep = "_")
+        
         
         #######################################
         # empty matrix for results
         #######################################
         #run_Samples_SIMULATE <- SAMPLING <- 1
-        fitm1  <- matrix(NA,run_Samples_SIMULATE,46)
+        
+        # Initialize empty matrix that stores fit indices
+        fitm1 <- matrix(NA, run_Samples_SIMULATE, 46)
         N <- person_size
         Nt <- time_point
+        ly1  <- matrix(c(0, 0, 0, model_TRUE_MISS, 0, 0,
+                         0, 0, 0, 0, 0, 0), 6, 2, byrow = F) # factor loadings
         
-        ly1  <- matrix(c(0,0,0,model_TRUE_MISS,0,0,
-                         0,0,0,0,0,0),6,2,byrow=F) # factor loadings
+        
         #######################################
-        # start looping over 
-        for (SAMPLING in 1:run_Samples_SIMULATE){#SAMPLING <-1
-          dat1 <- gendata01(N,Nt,phi0,mu0,ar0,ly0,ly1,td)
+        
+        
+        # Start looping over number of samplings
+        for (SAMPLING in 1:run_Samples_SIMULATE){ # SAMPLING <- 1
           
-          if(dat1[["is_positive_def"]]==T){
+          # Generate data 
+          dat1 <- gendata01(N, Nt, phi0, mu0, ar0, ly0, ly1, td)
+          
+          # Check if data is positive definite
+          if(dat1[["is_positive_def"]] == T){
+            
             y0 <- dat1[["y0"]]
-            # loop with error back-up
+            
+            # Fit model and store fit indices of this model in previously defined matrix, the row indicating the number of sampling
             fitm1[SAMPLING,] <- fit_model(y0)
-          }#end pos.def
-        }# end looping sampling
+            
+          }
+        } # end looping sampling
         
+        # Adjust column names of the fit indices matrix
         colnames(fitm1) <- fitnom
-        saveRDS(fitm1, file = paste0(name_local_SIMULATE_Info,".RDS")) # Save samples run
+        
+        # Save samples run
+        saveRDS(fitm1, file = paste0(name_local_SIMULATE_Info,".RDS")) 
+        
+        
+        
         
         #####################################################################
         #####################################################################
-      }else{
-        #type_MISS <- "tt1"
-        for(model_TRUE_MISS in model_TRUE_MISS_SIMULATE){#model_TRUE_MISS<-.3
-          name_local_SIMULATE_Info <- paste("C:\\holger\\SEM\\modelfit\\stanversion\\results_lavaan_version03_rand\\local", as.character(person_size), 
-                                            as.character(time_point),as.character(type_MISS),as.character(model_TRUE_MISS),core ,"_version03_rand", sep = "_")
+      }
+        else
+          { # type_MISS <- "tt1": between time points
+            
+        for(model_TRUE_MISS in model_TRUE_MISS_SIMULATE){ # check each misfit type # model_TRUE_MISS <- .3
+          
+          # save in current directory
+          name_local_SIMULATE_Info <- paste(current_dir, as.character(person_size), as.character(time_point), as.character(type_MISS), 
+                                            as.character(model_TRUE_MISS), core, "_version03_rand", sep = "_")
+          
           
           #######################################
           # empty matrix for results
           #######################################
-          fitm1  <- matrix(NA,run_Samples_SIMULATE,46)
-          N <- person_size #<-2500  
+          
+          # Initialize empty matrix that stores fit indices
+          fitm1 <- matrix(NA, run_Samples_SIMULATE, 46)
+          N <- person_size
           Nt <- time_point
           
-          if(type_MISS=="tt"){
-            ly1  <- matrix(c(0,0,0,model_TRUE_MISS,0,0,
-                             0,0,0,0,0,0),6,2,byrow=F) # factor loadings
-          }else{#model_TRUE_MISS<-.3
-            ly1  <- matrix(c(model_TRUE_MISS,0,0,0,0,0,
-                             0,0,0,0,0,0),6,2,byrow=F) # factor loadings
+          if(type_MISS == "tt"){
+            ly1  <- matrix(c(0, 0, 0, model_TRUE_MISS, 0, 0,
+                             0, 0, 0, 0, 0, 0), 6, 2, byrow = F) # factor loadings
           }
+          else
+            { # model_TRUE_MISS <- .3
+            ly1  <- matrix(c(model_TRUE_MISS, 0, 0, 0, 0, 0,
+                             0, 0, 0, 0, 0, 0), 6, 2, byrow = F) # factor loadings
+            }
+          
+          
           #######################################
-          # start looping over 
-          # GENERATE DATA
-          for (SAMPLING in 1:run_Samples_SIMULATE){#SAMPLING <-1
-            if(type_MISS=="tt"){
-              dat1 <- gendata01(N,Nt,phi0,mu0,ar0,ly0,ly1,td)
-            }else{
-              dat1 <- gendata02(N,Nt,phi0,mu0,ar0,ly0,ly1,td)
+          
+          
+          # Start looping over number of samplings
+          for (SAMPLING in 1:run_Samples_SIMULATE){ # SAMPLING <-1
+            
+            # Generate data 
+            if(type_MISS == "tt"){
+              dat1 <- gendata01(N, Nt, phi0, mu0, ar0, ly0, ly1, td)
+            }
+            else
+              {
+              dat1 <- gendata02(N, Nt, phi0, mu0, ar0, ly0, ly1, td)
             }
             
             
-            if(dat1[["is_positive_def"]]==T){
+            # Check if data is positive definite
+            if(dat1[["is_positive_def"]] == T){
+              
               y0 <- dat1[["y0"]]
-              # loop with error back-up
+              
+              # Fit model and store fit indices of this model in previously defined matrix, the row indicating the number of sampling
               fitm1[SAMPLING,] <- fit_model(y0)
               
-            }#end pos.def
-          }# end looping sampling
+            } 
+          } # end looping sampling
           
+          # Adjust column names of the fit indices matrix
           colnames(fitm1) <- fitnom
-          saveRDS(fitm1, file = paste0(name_local_SIMULATE_Info,".RDS")) # Save samples run
           
-          #######################################
-        }# model_true_miss
-      }#end else
+          # Save samples run
+          saveRDS(fitm1, file = paste0(name_local_SIMULATE_Info,".RDS")) 
+          
+        } # end looping over misfit types
+            
+      } # end else
       
+      } # end looping over misfit types
       
-      
-      
-      }# end misstype
-    }# end of if identification
-  }#end time points
-}#end person size
+    } # end checking specification requirement
+    
+  } #end looping over time points
+  
+} #end looping over persons
+
+
