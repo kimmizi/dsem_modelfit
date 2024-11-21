@@ -31,6 +31,8 @@ source(file.path(current_dir,  "gen_data_version03.R"))
 # working dir?
 #setwd()
 
+
+
 # 1. Setting hyperparameters ###################################################
 
 # Simulation params
@@ -75,6 +77,8 @@ fitnom <- c("npar","fmin","chisq","df","pvalue","baseline.chisq","baseline.df",
 
 #summary(res1,standardized=T)
 
+
+
 # Parallelise cores ############################################################
 # TODO: for core in cores
 # temporary core=1 for 1 run
@@ -95,17 +99,21 @@ fit_model <- function(y0){
     if(res1@optim$converged == T){ # if model converged: save fit indices
       fitmeasures(res1)  
     }
-    else{ # if model did not converge: save NAs
+    else
+      { # if model did not converge: save NAs
       rep(NA, 46)
       }
   }
-  else{ # if there is a try-error: save NAs
+  else
+    { # if there is a try-error: save NAs
     rep(NA, 46)
     }
 }
 
 # what does this line do?
 #diag((ly0)%*%phi0%*%t(ly0)+td)
+
+
 
 # Huge loop iterating over all simulation combinations
 
