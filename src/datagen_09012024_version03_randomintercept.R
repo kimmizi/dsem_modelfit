@@ -3,24 +3,32 @@ setwd("C:\\holger\\SEM\\modelfit\\stanversion")
 library(mvtnorm)
 library(matrixcalc)
 library(lavaan)
-
-type_MISS <- "tt1"
-i <- 2
-
 #library(foreach)
 #library(doParallel)
 
+# error typ hyperparam: set within vs between
+type_MISS <- "tt1"
+
+# what is i?
+i <- 2
+
+
+# ?
 #registerDoParallel(8) 
 
+# ?
 #detectCores()
-################################################################
+  
+# giant loop doing something ?
+
 #est <- 
 #  foreach (i=1:8) %dopar% {
+# why read in library at the start?
 #    library(mvtnorm)
 #    library(matrixcalc)
 #    library(lavaan)
     
-    
+# read in relevant functions
     #setwd("C:\\holger\\SEM\\modelfit\\stanversion")
     source("C:/holger/SEM/modelfit/stanversion/funs/lavaan_dsem_models_randomintercept.R")
     #source("C:/holger/SEM/modelfit/stanversion/funs/lavaan_dsem_models_comp1.R")
