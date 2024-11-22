@@ -1,11 +1,11 @@
 # generate data
 
-gendata01 <- function(N,Nt,phi0,mu0,ar0,ly0,ly1,td){
+gendata01 <- function(N, Nt, phi0, mu0, ar0, ly0, ly1, td){
   #N<-10000
   #SAMPLING <- 1
   # random intercept with var=.3, so icc=.3
   covu0 <- phi0*.3
-  eta2 <- rmvnorm(N,mu0,covu0) # RANDOM INTERCEPT VALUES
+  eta2 <- rmvnorm(N, mu0, covu0) # RANDOM INTERCEPT VALUES
   
   # empty matrices for lvs and ovs
   eta <- array(NA,c(Nt,N,2))

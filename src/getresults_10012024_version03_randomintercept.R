@@ -30,13 +30,15 @@ fitnom.res1 <- c("npar","fmin","chisq","df","pvalue","baseline.chisq","baseline.
                  "agfi","pgfi","mfi","ecvi") 
 
 getstuff <- function(name_local_SIMULATE_Info){
-  res11 <- try(readRDS(file = name_local_SIMULATE_Info), silent = TRUE)
+  res11 <- try(read.csv(file = name_local_SIMULATE_Info), silent = TRUE)
   if(!inherits(res11, "try-error")){
     res11
   }else{
     matrix(NA,run_Samples_SIMULATE,length(fitnom.res1))    
   }
 }
+
+current_dir <- "~/PycharmProjects/dsem_modelfit/src/"
 
 ijk <- 1
 for (time_point in time_point_SIMULATE) {
@@ -55,8 +57,8 @@ for (time_point in time_point_SIMULATE) {
           for(i in 1:runpcs){
             
             # MISSSPECIFICATIONS
-            name_local_SIMULATE_Info <- paste("C:\\holger\\SEM\\modelfit\\stanversion\\results_lavaan_version03_rand\\local", as.character(person_size), 
-                                              as.character(time_point),as.character(type_MISS),as.character(model_TRUE_MISS),i ,"_version03_rand.RDS", sep = "_")
+            name_local_SIMULATE_Info <- paste(current_dir, as.character(person_size), as.character(time_point), as.character(type_MISS), 
+                                              as.character(model_TRUE_MISS), core, "_version03_rand", sep = "_")
             
             # TRUE DGP
             name_local_SIMULATE_Info2 <- paste("C:\\holger\\SEM\\modelfit\\stanversion\\results_lavaan_version03_rand\\local", as.character(person_size), 
