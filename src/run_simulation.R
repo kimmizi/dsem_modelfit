@@ -1,15 +1,10 @@
-# This file runs the following
-# - set hyperparams for 1 run
-# - data generation function
-# - fit models
-# - get fit indices
-# - return results for later analysis
+# This file does the following:
+# - Imports requirements and sets hyperparams for simulation run
+# - Defines helper functions for simulation
+# - Runs model simulations for desired conditions and saves results exp
 
+# 0. Importing relevant libraries and functions ################################
 
-
-# 0. importing relevant libraries and functions ################################
-
-# 
 library(mvtnorm)
 library(matrixcalc)
 library(lavaan)
@@ -26,7 +21,7 @@ source(file.path(current_dir,  "gen_data_version03.R"))
 
 # source(file.path(current_dir, "lavaan_dsem_models_comp1.R"))
 # source(file.path(current_dir,  "lavaan_dsem_models_comp2.R"))
-#source(file.path(current_dir,  "gen_data_version04.R"))
+source(file.path(current_dir,  "gen_data_version04.R"))
 
 # working dir?
 #setwd()
@@ -36,26 +31,28 @@ source(file.path(current_dir,  "gen_data_version03.R"))
 # 1. Setting hyperparameters ###################################################
 
 # Simulation params
+# Save as filetype (one of local, RDS, csv)
+save_as = 'csv'
 
 # Number of cores for parallelisation
 cores <- 1
 
 # Number of people / time point?
-person_size_SIMULATE <- c(91)
-#person_size_SIMULATE <- c(91, 121, 151, 181, 211, 501, 1001, 1501, 2001, 2501, 61, 31)
+Person_size <- c(91)
+#Person_size <- c(91, 121, 151, 181, 211, 501, 1001, 1501, 2001, 2501, 61, 31)
 
 # Number of measurement time points
-time_point_SIMULATE <- 15 # Nt
-#time_point_SIMULATE <- c(1:5, 10, 15) # Nt
+Timepoints <- 5 # N_timep
+#Timepoints <- c(1:5, 10, 15) # N_timep
 
 # Size of crossloading (indicating misfit)
-model_TRUE_MISS_SIMULATE <- c(.3,.6)
+Size_crossloading <- c(0,.3,.6)
 
 # What models to specify and run: within time points/ between time points
-type_TRUE_MISS_SIMULATE <- c("none","tt","tt1")
+Type_crossloading <- c("none","tt","tt1")
 
 # Number of data samples to generate and run model fit on them
-run_Samples_SIMULATE <- 3
+N_sim_samples <- 3
 
 # DSEM model params
 phi0 <- diag(2)*.7+.3 # cov(eta)
@@ -75,189 +72,167 @@ fitnom <- c("npar","fmin","chisq","df","pvalue","baseline.chisq","baseline.df",
             "crmr","crmr_nomean","srmr_mplus","srmr_mplus_nomean","cn_05","cn_01","gfi",
             "agfi","pgfi","mfi","ecvi") 
 
-#summary(res1,standardized=T)
 
-
-
-# Parallelise cores ############################################################
+# Parallelise cores 
 # TODO: for core in cores
-# temporary core=1 for 1 run
+# temporary: using core=1 for 1 run
 core <- 1
 
-# Generate data: right now only taking y0 from get_data_version03.R
-#dat <- y0
 
-# Function to fit a single model, capture fit specific errors for later
+
+
+# 2. Helper functions ##########################################################
+
+# Helper function to fit a single model, capture fit specific errors for later
 # Input: data y0
 # Output: model res1
 fit_model <- function(y0){ 
   
-  res1 <- try(sem(dsem[[time_point]], data = y0, std.lv = TRUE), silent = TRUE)
-  
-  if(!inherits(res1, "try-error")){ # if there is no try-error
-    
-    if(res1@optim$converged == T){ # if model converged: save fit indices
+  res1 <- try(sem(dsem[[N_timep]], data = y0, std.lv = TRUE), silent = TRUE)
+  # if there is no try-error
+  if(!inherits(res1, "try-error")){ 
+    # if model converged: save fit indices
+    if(res1@optim$converged == T){ 
       fitmeasures(res1)  
     }
-    else
-      { # if model did not converge: save NAs
-      rep(NA, 46)
-      }
-  }
-  else
-    { # if there is a try-error: save NAs
-    rep(NA, 46)
+    else { # if model did not converge: save NAs so that simulation doesnt get broken
+      rep(NA, length(fitnom))
     }
+  } 
+  else { # if there is a try-error: save NAs so that simulation doesnt get broken
+    rep(NA, length(fitnom))
+  }
 }
 
-# what does this line do?
-#diag((ly0)%*%phi0%*%t(ly0)+td)
+
+# Helper function to initialize factor loadings
+initialize_ly1 <- function(Type_misfit, Size_misfit) {
+  if (Type_misfit == "tt") {
+    return(matrix(c(0, 0, 0, Size_misfit, 0, 0,
+                    0, 0, 0, 0, 0, 0), 6, 2, byrow = F))
+  } else if (Type_misfit == "tt1") {
+    return(matrix(c(Size_misfit, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0), 6, 2, byrow = F))
+  } else {
+    return(matrix(c(0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0), 6, 2, byrow = F)) # For "none"
+  }
+}
+
+# Helper function to initialize simulation specific data set
+
+generate_temp_data <- function(Type_crossloading , N_pers, N_timep, phi0, mu0, ar0, ly0, ly1, td) {
+  if (Type_crossloading == "tt") {
+    return(gendata01(N_pers, N_timep, phi0, mu0, ar0, ly0, ly1, td))
+  } else if (Type_crossloading == "tt1") {
+    return(gendata02(N_pers, N_timep, phi0, mu0, ar0, ly0, ly1, td))
+  } else {
+    return(gendata01(N_pers, N_timep, phi0, mu0, ar0, ly0, ly1, td))
+  }
+}
 
 
+# 3. Simulation ################################################################
 
-# Huge loop iterating over all simulation combinations
 
-for (person_size in person_size_SIMULATE) { # looping over persons
-  
-  for (time_point in time_point_SIMULATE) { # looping over time points
-    
-    if(time_point*6 < person_size){ # checking if N_t+p < Nt? Specification requirement
-      
-      for(type_MISS in type_TRUE_MISS_SIMULATE){ # check each misfit type
-      
-      # set core specific seed
-      set.seed(131212023 + core + person_size + time_point*1000 + as.numeric(as.factor(type_MISS))*10000)
+# Record loop start time
+start_measurement_time <- proc.time()
 
-        
-      #####################################################################
-      if(type_MISS == "none"){ # core <- 1
-        
-        # there are no missspecifications
-        model_TRUE_MISS <- 0
-        
-        # save in current directory
-        name_local_SIMULATE_Info <- paste(current_dir, as.character(person_size), as.character(time_point), as.character(type_MISS), 
-                                          as.character(model_TRUE_MISS), core, "_version03_rand", sep = "_")
-        
-        
-        #######################################
-        # empty matrix for results
-        #######################################
-        #run_Samples_SIMULATE <- SAMPLING <- 1
-        
-        # Initialize empty matrix that stores fit indices
-        fitm1 <- matrix(NA, run_Samples_SIMULATE, 46)
-        N <- person_size
-        Nt <- time_point
-        ly1  <- matrix(c(0, 0, 0, model_TRUE_MISS, 0, 0,
-                         0, 0, 0, 0, 0, 0), 6, 2, byrow = F) # factor loadings
-        
-        
-        #######################################
-        
-        
-        # Start looping over number of samplings
-        for (SAMPLING in 1:run_Samples_SIMULATE){ # SAMPLING <- 1
-          
-          # Generate data 
-          dat1 <- gendata01(N, Nt, phi0, mu0, ar0, ly0, ly1, td)
-          
-          # Check if data is positive definite
-          if(dat1[["is_positive_def"]] == T){
-            
-            y0 <- dat1[["y0"]]
-            
-            # Fit model and store fit indices of this model in previously defined matrix, the row indicating the number of sampling
-            fitm1[SAMPLING,] <- fit_model(y0)
-            
-          }
-        } # end looping sampling
-        
-        # Adjust column names of the fit indices matrix
-        colnames(fitm1) <- fitnom
-        
-        # Save samples run
-        saveRDS(fitm1, file = paste0(name_local_SIMULATE_Info,".RDS")) 
-        
-        
-        
-        
-        #####################################################################
-        #####################################################################
-      }
-        else
-          { # type_MISS <- "tt1": between time points
-            
-        for(model_TRUE_MISS in model_TRUE_MISS_SIMULATE){ # check each misfit type # model_TRUE_MISS <- .3
-          
-          # save in current directory
-          name_local_SIMULATE_Info <- paste(current_dir, as.character(person_size), as.character(time_point), as.character(type_MISS), 
-                                            as.character(model_TRUE_MISS), core, "_version03_rand", sep = "_")
-          
-          
-          #######################################
-          # empty matrix for results
-          #######################################
-          
-          # Initialize empty matrix that stores fit indices
-          fitm1 <- matrix(NA, run_Samples_SIMULATE, 46)
-          N <- person_size
-          Nt <- time_point
-          
-          if(type_MISS == "tt"){
-            ly1  <- matrix(c(0, 0, 0, model_TRUE_MISS, 0, 0,
-                             0, 0, 0, 0, 0, 0), 6, 2, byrow = F) # factor loadings
-          }
-          else
-            { # model_TRUE_MISS <- .3
-            ly1  <- matrix(c(model_TRUE_MISS, 0, 0, 0, 0, 0,
-                             0, 0, 0, 0, 0, 0), 6, 2, byrow = F) # factor loadings
-            }
-          
-          
-          #######################################
-          
-          
-          # Start looping over number of samplings
-          for (SAMPLING in 1:run_Samples_SIMULATE){ # SAMPLING <-1
-            
-            # Generate data 
-            if(type_MISS == "tt"){
-              dat1 <- gendata01(N, Nt, phi0, mu0, ar0, ly0, ly1, td)
-            }
-            else
-              {
-              dat1 <- gendata02(N, Nt, phi0, mu0, ar0, ly0, ly1, td)
-            }
-            
-            
+# Main simulation loop
+for (N_pers in Person_size) {
+  for (N_timep in Timepoints) {
+    # Check specification requirement
+    if (N_timep * 6 >= N_pers) next
+    for (Type_misfit in Type_crossloading) {
+
+      # Set random seed for reproducibility
+      set.seed(131212023 + core + N_pers + N_timep * 1000 + as.numeric(as.factor(Type_misfit)) * 10000)
+
+      for (Size_misfit in Size_crossloading) {
+        # if type tt or tt1, dont run size=0, else run
+        if(Size_misfit == 0 && Type_misfit != "none"){
+          cat('skipped over misfit type:', Type_misfit, " and size:", Size_misfit, "\n")
+
+        }else{
+          # Initialize factor loadings for the current condition
+          ly1 <- initialize_ly1(Type_misfit, Size_misfit)
+          #print(Type_misfit)
+          #print(Size_misfit)
+
+          # Prepare file name
+          Exp_name_info <- paste(N_pers, N_timep, Type_misfit,
+                                            Size_misfit, core, "_version03_rand", sep = "_")
+
+          # Initialize empty matrix to store fit indices
+          fitm1 <- matrix(NA, N_sim_samples, length(fitnom))
+
+          # Loop over samples
+          for (Index_sample in 1:N_sim_samples) {
+            temp_dat <- generate_temp_data(Type_misfit, N_pers, N_timep, phi0, mu0, ar0, ly0, ly1, td)
+
             # Check if data is positive definite
-            if(dat1[["is_positive_def"]] == T){
-              
-              y0 <- dat1[["y0"]]
-              
-              # Fit model and store fit indices of this model in previously defined matrix, the row indicating the number of sampling
-              fitm1[SAMPLING,] <- fit_model(y0)
-              
-            } 
-          } # end looping sampling
-          
-          # Adjust column names of the fit indices matrix
+            if (temp_dat[["is_positive_def"]]) {
+              y0 <- temp_dat[["y0"]]
+              fitm1[Index_sample, ] <- fit_model(y0) # Fit model and store results
+            }
+          }
+
+          # Print model being saved after simulation block
+          cat('Ran misfit_type:', Type_misfit, ' misfit_size:', Size_misfit, ' for', N_sim_samples, 'indep samples', '\n')
+          # Save results
           colnames(fitm1) <- fitnom
+
+          # Move up one directory level to dsem_modelfit
+          parent_dir <- dirname(current_dir)
+          # Define the experiment name
+          Exp_day <- format(Sys.time(), "%Y-%m-%d") # Format: YYYY-MM-DD_HH-MM-SS
+          Exp_time <- format(Sys.time(), "%H-%M-%S") # Format: YYYY-MM-DD_HH-MM-SS
+          # Define the save directory in dsem_modelfit/exp
+          save_dir <- file.path(parent_dir, "exp", Exp_day)
+          # Create the day directory if it does not exist
+          if (!dir.exists(save_dir)) {
+            dir.create(save_dir, recursive = TRUE)
+          }
+          # Save model along its time of saving to have tractability
           
-          # Save samples run
-          saveRDS(fitm1, file = paste0(name_local_SIMULATE_Info,".RDS")) 
-          
-        } # end looping over misfit types
+          if(save_as == 'local'){
+            # Initialize an empty dataframe to store results across runs
+            if (!exists("simulation_results_df")) {
+              simulation_results_df <- data.frame()
+            }
             
-      } # end else
-      
-      } # end looping over misfit types
-      
-    } # end checking specification requirement
-    
-  } #end looping over time points
-  
-} #end looping over persons
+            # Add the current `fitm1` as a new row (ensure it can be coerced into a dataframe)
+            if (is.data.frame(fitm1)) {
+              fitm1_row <- fitm1
+            } else {
+              fitm1_row <- as.data.frame(fitm1)
+            }
+            
+            # Optionally add simulation metadata (e.g., Exp_name_info) to the row
+            fitm1_row$Exp_name_info <- Exp_name_info
+            
+            # Append the row to the dataframe
+            simulation_results_df <- rbind(simulation_results_df, fitm1_row)
+          }else if(save_as == 'RDS'){
+            # Save your RDS file in the desired directory with EXP_NAME in the filename
+            saveRDS(fitm1, file = file.path(save_dir, paste0(Exp_name_info,"_time_",Exp_time, ".RDS")))
+          }else if(save_as == 'csv'){
+            csv_path <- file.path(save_dir, paste0(Exp_name_info, "_time_", Exp_time, ".csv"))
+            write.csv(fitm1, file = csv_path, row.names = FALSE) 
+          }else{
+            cat("Format of type", save_as, " cannot be saved.")
+          }
+        }
+      }
+    }
+  }
+}
+
+# Record end time
+end_measurement_time <- proc.time()
+
+# Calculate elapsed time
+time_taken <- end_measurement_time - start_measurement_time
+print(time_taken)
 
 
