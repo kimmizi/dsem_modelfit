@@ -121,7 +121,7 @@ initialize_ly1 <- function(Type_misfit, Size_misfit) {
 
 # Helper function to initialize simulation specific data set
 
-generate_temp_data <- function(Type_crossloading , N_pers, N_timep, phi0, mu0, ar0, ly0, ly1, td) {
+generate_temp_data <- function(Type_crossloading, N_pers, N_timep, phi0, mu0, ar0, ly0, ly1, td) {
   if (Type_crossloading == "tt") {
     return(gendata01(N_pers, N_timep, phi0, mu0, ar0, ly0, ly1, td))
   } else if (Type_crossloading == "tt1") {
