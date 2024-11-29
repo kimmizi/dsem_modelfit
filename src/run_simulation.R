@@ -32,7 +32,7 @@ source(file.path(current_dir,  "gen_data_version04.R"))
 
 # Simulation params
 # Save as filetype (one of local, RDS, csv)
-save_as = 'csv'
+save_as = 'local'
 
 # Number of cores for parallelisation
 cores <- 1
@@ -152,7 +152,8 @@ for (N_pers in Person_size) {
         # if type tt or tt1, dont run size=0, else run
         if(Size_misfit == 0 && Type_misfit != "none"){
           cat('skipped over misfit type:', Type_misfit, " and size:", Size_misfit, "\n")
-
+        }else if(Size_misfit != 0 && Type_misfit == "none"){
+          cat('skipped over misfit type:', Type_misfit, " and size:", Size_misfit, "\n")
         }else{
           # Initialize factor loadings for the current condition
           ly1 <- initialize_ly1(Type_misfit, Size_misfit)
