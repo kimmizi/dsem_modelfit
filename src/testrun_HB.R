@@ -10,7 +10,6 @@ rstan_options(auto_write = TRUE)
 options(mc.cores = parallel::detectCores())
 
 
-setwd("/Users/kimzierahn/PycharmProjects/dsem_modelfit/src")
 
 
 source("lavaan_dsem_models_randomintercept.R")
