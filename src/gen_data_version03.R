@@ -18,7 +18,6 @@
 # x_cov: covariance matrix of y0
 # x_mean: mean vector of y0
 
-
 gendata01 <- function(N, Nt, phi0, mu0, ar0, ly0, ly1, td){
 
   # random intercept with var = .3, so icc = .3

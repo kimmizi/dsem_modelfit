@@ -1,305 +1,120 @@
-null.dsem <- list()
 #########################################################
-null.dsem[[4]] <- '
-
-# SIMPLY CREATING VARIANCES FOR EACH ITEM! = NULLMODEL
-y1t1 ~~ y1t1
-y1t2 ~~ y1t2
-y1t3 ~~ y1t3
-y1t4 ~~ y1t4
-#
-y2t1 ~~ y2t1
-y2t2 ~~ y2t2
-y2t3 ~~ y2t3
-y2t4 ~~ y2t4
-#
-y3t1 ~~ y3t1
-y3t2 ~~ y3t2
-y3t3 ~~ y3t3
-y3t4 ~~ y3t4
-#
-y4t1 ~~ y4t1
-y4t2 ~~ y4t2
-y4t3 ~~ y4t3
-y4t4 ~~ y4t4
-#
-y5t1 ~~ y5t1
-y5t2 ~~ y5t2
-y5t3 ~~ y5t3
-y5t4 ~~ y5t4
-#
-y6t1 ~~ y6t1
-y6t2 ~~ y6t2
-y6t3 ~~ y6t3
-y6t4 ~~ y6t4
-'
-
+#### Nullmodels ####
 #########################################################
-null.dsem[[3]] <- '
-y1t1 ~~ y1t1
-y1t2 ~~ y1t2
-y1t3 ~~ y1t3
-#
-y2t1 ~~ y2t1
-y2t2 ~~ y2t2
-y2t3 ~~ y2t3
-#
-y3t1 ~~ y3t1
-y3t2 ~~ y3t2
-y3t3 ~~ y3t3
-#
-y4t1 ~~ y4t1
-y4t2 ~~ y4t2
-y4t3 ~~ y4t3
-#
-y5t1 ~~ y5t1
-y5t2 ~~ y5t2
-y5t3 ~~ y5t3
-#
-y6t1 ~~ y6t1
-y6t2 ~~ y6t2
-y6t3 ~~ y6t3
-'
 
-#########################################################
-null.dsem[[2]] <- '
-y1t1 ~~ y1t1
-y1t2 ~~ y1t2
-#
-y2t1 ~~ y2t1
-y2t2 ~~ y2t2
-#
-y3t1 ~~ y3t1
-y3t2 ~~ y3t2
-#
-y4t1 ~~ y4t1
-y4t2 ~~ y4t2
-#
-y5t1 ~~ y5t1
-y5t2 ~~ y5t2
-#
-y6t1 ~~ y6t1
-y6t2 ~~ y6t2
-'
 
 
 #########################################################
-null.dsem[[1]] <- '
-y1t1 ~~ y1t1
-#
-y2t1 ~~ y2t1
-#
-y3t1 ~~ y3t1
-#
-y4t1 ~~ y4t1
-#
-y5t1 ~~ y5t1
-#
-y6t1 ~~ y6t1
-'
+#### configural invariance model ####
+# has the same pattern of fixed and free loadings in the factor loading matrix 
+# in each time point but no cross-time invariance constraints in any matrices and
+# is thus the least constrained model
 #########################################################
-null.dsem[[5]] <- '
-y1t1 ~~ y1t1
-y1t2 ~~ y1t2
-y1t3 ~~ y1t3
-y1t4 ~~ y1t4
-y1t5 ~~ y1t5
-#
-y2t1 ~~ y2t1
-y2t2 ~~ y2t2
-y2t3 ~~ y2t3
-y2t4 ~~ y2t4
-y2t5 ~~ y2t5
-#
-y3t1 ~~ y3t1
-y3t2 ~~ y3t2
-y3t3 ~~ y3t3
-y3t4 ~~ y3t4
-y3t5 ~~ y3t5
-#
-y4t1 ~~ y4t1
-y4t2 ~~ y4t2
-y4t3 ~~ y4t3
-y4t4 ~~ y4t4
-y4t5 ~~ y4t5
-#
-y5t1 ~~ y5t1
-y5t2 ~~ y5t2
-y5t3 ~~ y5t3
-y5t4 ~~ y5t4
-y5t5 ~~ y5t5
-#
-y6t1 ~~ y6t1
-y6t2 ~~ y6t2
-y6t3 ~~ y6t3
-y6t4 ~~ y6t4
-y6t5 ~~ y6t5
-'
+
+configural_invariance_model <- function(timepoints) {
+  model_string <- ''
+  
+  for (t in 1:timepoints) {
+    
+    # fixed latent structure
+    model_string <- paste(model_string, sprintf('
+      eta1t%d =~ ly1*y1t%d + ly2*y2t%d + ly3*y3t%d
+      eta2t%d =~ ly4*y4t%d + ly5*y5t%d + ly6*y6t%d
+    ', t, t, t, t, t, t, t, t), sep="\n")
+  }
+  
+  return(model_string)
+}
+
+configural_invariance_model(2)
+
+
 
 #########################################################
-null.dsem[[10]] <- '
-y1t1 ~~ y1t1
-y1t2 ~~ y1t2
-y1t3 ~~ y1t3
-y1t4 ~~ y1t4
-y1t5 ~~ y1t5
-y1t6 ~~ y1t6
-y1t7 ~~ y1t7
-y1t8 ~~ y1t8
-y1t9 ~~ y1t9
-y1t10 ~~ y1t10
+#### weak factorial invariance model ####
+# is identical to the configural invariance model, 
+# but invokes cross-time invariance constraints on factor loadings in the factor loading matrix 
+#########################################################
+
+#weak_invariance_model <- function(timepoints) {
+#  model_string <- configural_invariance_model(timepoints)
 #
-y2t1 ~~ y2t1
-y2t2 ~~ y2t2
-y2t3 ~~ y2t3
-y2t4 ~~ y2t4
-y2t5 ~~ y2t5
-y2t6 ~~ y2t6
-y2t7 ~~ y2t7
-y2t8 ~~ y2t8
-y2t9 ~~ y2t9
-y2t10 ~~ y2t10
-#
-y3t1 ~~ y3t1
-y3t2 ~~ y3t2
-y3t3 ~~ y3t3
-y3t4 ~~ y3t4
-y3t5 ~~ y3t5
-y3t6 ~~ y3t6
-y3t7 ~~ y3t7
-y3t8 ~~ y3t8
-y3t9 ~~ y3t9
-y3t10 ~~ y3t10
-#
-y4t1 ~~ y4t1
-y4t2 ~~ y4t2
-y4t3 ~~ y4t3
-y4t4 ~~ y4t4
-y4t5 ~~ y4t5
-y4t6 ~~ y4t6
-y4t7 ~~ y4t7
-y4t8 ~~ y4t8
-y4t9 ~~ y4t9
-y4t10 ~~ y4t10
-#
-y5t1 ~~ y5t1
-y5t2 ~~ y5t2
-y5t3 ~~ y5t3
-y5t4 ~~ y5t4
-y5t5 ~~ y5t5
-y5t6 ~~ y5t6
-y5t7 ~~ y5t7
-y5t8 ~~ y5t8
-y5t9 ~~ y5t9
-y5t10 ~~ y5t10
-#
-y6t1 ~~ y6t1
-y6t2 ~~ y6t2
-y6t3 ~~ y6t3
-y6t4 ~~ y6t4
-y6t5 ~~ y6t5
-y6t6 ~~ y6t6
-y6t7 ~~ y6t7
-y6t8 ~~ y6t8
-y6t9 ~~ y6t9
-y6t10 ~~ y6t10
-'
+#  return(model_string)
+#}
+# not applicable here
+
 
 #########################################################
-null.dsem[[15]] <- '
-y1t1 ~~ y1t1
-y1t2 ~~ y1t2
-y1t3 ~~ y1t3
-y1t4 ~~ y1t4
-y1t5 ~~ y1t5
-y1t6 ~~ y1t6
-y1t7 ~~ y1t7
-y1t8 ~~ y1t8
-y1t9 ~~ y1t9
-y1t10 ~~ y1t10
-y1t11 ~~ y1t11
-y1t12 ~~ y1t12
-y1t13 ~~ y1t13
-y1t14 ~~ y1t14
-y1t15 ~~ y1t15
-#
-y2t1 ~~ y2t1
-y2t2 ~~ y2t2
-y2t3 ~~ y2t3
-y2t4 ~~ y2t4
-y2t5 ~~ y2t5
-y2t6 ~~ y2t6
-y2t7 ~~ y2t7
-y2t8 ~~ y2t8
-y2t9 ~~ y2t9
-y2t10 ~~ y2t10
-y2t11 ~~ y2t11
-y2t12 ~~ y2t12
-y2t13 ~~ y2t13
-y2t14 ~~ y2t14
-y2t15 ~~ y2t15
-#
-y3t1 ~~ y3t1
-y3t2 ~~ y3t2
-y3t3 ~~ y3t3
-y3t4 ~~ y3t4
-y3t5 ~~ y3t5
-y3t6 ~~ y3t6
-y3t7 ~~ y3t7
-y3t8 ~~ y3t8
-y3t9 ~~ y3t9
-y3t10 ~~ y3t10
-y3t11 ~~ y3t11
-y3t12 ~~ y3t12
-y3t13 ~~ y3t13
-y3t14 ~~ y3t14
-y3t15 ~~ y3t15
-#
-y4t1 ~~ y4t1
-y4t2 ~~ y4t2
-y4t3 ~~ y4t3
-y4t4 ~~ y4t4
-y4t5 ~~ y4t5
-y4t6 ~~ y4t6
-y4t7 ~~ y4t7
-y4t8 ~~ y4t8
-y4t9 ~~ y4t9
-y4t10 ~~ y4t10
-y4t11 ~~ y4t11
-y4t12 ~~ y4t12
-y4t13 ~~ y4t13
-y4t14 ~~ y4t14
-y4t15 ~~ y4t15
-#
-y5t1 ~~ y5t1
-y5t2 ~~ y5t2
-y5t3 ~~ y5t3
-y5t4 ~~ y5t4
-y5t5 ~~ y5t5
-y5t6 ~~ y5t6
-y5t7 ~~ y5t7
-y5t8 ~~ y5t8
-y5t9 ~~ y5t9
-y5t10 ~~ y5t10
-y5t11 ~~ y5t11
-y5t12 ~~ y5t12
-y5t13 ~~ y5t13
-y5t14 ~~ y5t14
-y5t15 ~~ y5t15
-#
-y6t1 ~~ y6t1
-y6t2 ~~ y6t2
-y6t3 ~~ y6t3
-y6t4 ~~ y6t4
-y6t5 ~~ y6t5
-y6t6 ~~ y6t6
-y6t7 ~~ y6t7
-y6t8 ~~ y6t8
-y6t9 ~~ y6t9
-y6t10 ~~ y6t10
-y6t11 ~~ y6t11
-y6t12 ~~ y6t12
-y6t13 ~~ y6t13
-y6t14 ~~ y6t14
-y6t15 ~~ y6t15
-'
+#### strong factorial invariance model ####
+# adds to the weak factorial invariance model cross-time invariance constraints
+# on intercept terms
+#########################################################
+
+strong_invariance_model <- function(timepoints) {
+  model_string <- configural_invariance_model(timepoints)
+  
+  # Intercepts Invariance across time points
+  for (t in 1:(timepoints-1)) {
+    model_string <- paste(model_string, sprintf('
+      y1t%d ~ 1*y1t%d
+      y2t%d ~ 1*y2t%d
+      y3t%d ~ 1*y3t%d
+      y4t%d ~ 1*y4t%d
+      y5t%d ~ 1*y5t%d
+      y6t%d ~ 1*y6t%d
+    ', t, t+1, t, t+1, t, t+1, t, t+1, t, t+1, t, t+1), sep="\n")
+  }
+  
+  return(model_string)
+}
+
+
+
+#########################################################
+#### strict factorial invariance model ####
+# adds to the strong factorial invariance
+# model cross-time constraints on unique factor variances
+#########################################################
+
+strict_invariance_model <- function(timepoints) {
+  model_string <- strong_invariance_model(timepoints)
+  
+  # Residual Variance Constraints across time points (Strict Invariance)
+  for (t in 1:(timepoints - 1)) {
+    model_string <- paste(model_string, sprintf('
+      y1t%d ~~ y1t%d
+      y2t%d ~~ y2t%d
+      y3t%d ~~ y3t%d
+      y4t%d ~~ y4t%d
+      y5t%d ~~ y5t%d
+      y6t%d ~~ y6t%d
+    ', t, t+1, t, t+1, t, t+1, t, t+1, t, t+1, t, t+1), sep="\n")
+  }
+  
+  return(model_string)
+}
+
+
+
+#########################################################
+#### null model ####
+# variables are uncorrelated across time points
+#########################################################
+
+null_model <- function(timepoints) {
+  model <- ''
+  
+  for (t in 1:timepoints) {
+    model <- paste0(model, '
+      y1t', t, ' ~~ y1t', t, '
+      y2t', t, ' ~~ y2t', t, '
+      y3t', t, ' ~~ y3t', t, '
+      y4t', t, ' ~~ y4t', t, '
+      y5t', t, ' ~~ y5t', t, '
+      y6t', t, ' ~~ y6t', t, '
+      ')
+  }
+  
+  return(model)
+}
+

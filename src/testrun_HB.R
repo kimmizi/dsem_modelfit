@@ -10,12 +10,15 @@ rstan_options(auto_write = TRUE)
 options(mc.cores = parallel::detectCores())
 
 
-setwd("C:\\holger\\SEM\\dsem_modelfit_lavaan\\dsem_modelfit\\src")
+setwd("/Users/kimzierahn/PycharmProjects/dsem_modelfit/src")
 
 
 source("lavaan_dsem_models_randomintercept.R")
+source("lavaan_dsem_nullmodels.R")
 source("gen_data_version03.R")
 source("fitfunctions_stan.R")
+
+
 
 #################################################
 # data
@@ -38,7 +41,7 @@ td   <- diag(6)*(1 - ly00^2) # cond. var(y) -> res var
 
 
 # generate data without misfit here
-dat1 <- gendata01(N=Person_size, Nt=Timepoints, phi0, mu0, ar0, ly0, ly1=matrix(0,6,2), td)
+dat1 <- gendata01(N = Person_size, Nt = Timepoints, phi0, mu0, ar0, ly0, ly1 = matrix(0,6,2), td)
 length(dat1)
 
 ydat <- dat1$y #use array version of data for stan
@@ -70,9 +73,50 @@ fitresults1
 # analyze dat with blavaan
 #################################################
 library(blavaan)
-sem.bl1 <- bsem(dsem[[Timepoints]],ydat2,n.chains=4,burnin=1000,sample=1000) # use similar conditions as stan to make it comparable
+sem.bl1 <- bsem(dsem[[Timepoints]], ydat2, 
+                n.chains = 4, burnin = 1000, sample = 1000) # use similar conditions as stan to make it comparable
 summary(sem.bl1,fit=T)
+
 f1.sem.bl1 <- blavFitIndices(sem.bl1) # relevant indices
+
+
+
+#################################################
+# experimenting with different null models
+#################################################
+
+## fit null model to calculate CFI
+
+fit_conv_inv <- bsem(configural_invariance_model(Timepoints), ydat2, 
+                 n.chains = 4, burnin = 1000, sample = 1000)
+
+#fit_weak_inv <- bsem(weak_invariance_model(Timepoints), ydat2, 
+#                     n.chains = 4, burnin = 1000, sample = 1000)
+
+fit_strong <- bsem(strong_invariance_model(Timepoints), ydat2, 
+                     n.chains = 4, burnin = 1000, sample = 1000)
+
+fit_strict <- bsem(strict_invariance_model(Timepoints), ydat2, 
+                     n.chains = 4, burnin = 1000, sample = 1000)
+
+fit_null <- bsem(null_model(Timepoints), ydat2, 
+                 n.chains = 4, burnin = 1000, sample = 1000)
+
+
+f1.sem.bl1_inv <- blavFitIndices(sem.bl1, baseline.model = fit_conv_inv) # relevant indices
+#f1.sem.bl1_weak <- blavFitIndices(sem.bl1, baseline.model = fit_weak_inv) # relevant indices
+f1.sem.bl1_strong <- blavFitIndices(sem.bl1, baseline.model = fit_strong) # relevant indices
+f1.sem.bl1_strict <- blavFitIndices(sem.bl1, baseline.model = fit_strong) # relevant indices
+f1.sem.bl1_null <- blavFitIndices(sem.bl1, baseline.model = fit_null) # relevant indices
+
+
+f1.sem.bl1_inv
+#f1.sem.bl1_weak
+f1.sem.bl1_strong
+f1.sem.bl1_strict
+f1.sem.bl1_null
+
+
 #f2.sem.bl1 <- fitmeasures(sem.bl1) # some other fit indices like aic etc., ignore for now
 
 

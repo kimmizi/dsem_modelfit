@@ -55,7 +55,7 @@ Type_crossloading <- c("none","tt","tt1")
 N_sim_samples <- 3
 
 # DSEM model params
-phi0 <- diag(2)*.7+.3 # cov(eta)
+phi0 <- diag(2)*.7+.3  # cov(eta)
 mu0  <- c(0, 0)        # mean(eta)
 ar0  <- c(.3, .3)      # ar(1) structure
 ly00 <- .6
