@@ -44,6 +44,7 @@ configural_invariance_model(2)
 # not applicable here
 
 
+
 #########################################################
 #### strong factorial invariance model ####
 # adds to the weak factorial invariance model cross-time invariance constraints
@@ -117,4 +118,41 @@ null_model <- function(timepoints) {
   
   return(model)
 }
+
+
+
+#########################################################
+#### null model with correlated residuals ####
+#########################################################
+
+null_model_corr_res <- function(timepoints) {
+  model <- ''
+  
+  # Uncorrelated residuals within each timepoint
+  for (t in 1:timepoints) {
+    model <- paste0(model, '
+      y1t', t, ' ~~ y1t', t, '
+      y2t', t, ' ~~ y2t', t, '
+      y3t', t, ' ~~ y3t', t, '
+      y4t', t, ' ~~ y4t', t, '
+      y5t', t, ' ~~ y5t', t, '
+      y6t', t, ' ~~ y6t', t, '
+      ')
+  }
+  
+  # Correlated residuals across timepoints for corresponding variables
+  for (t in 1:(timepoints - 1)) {
+    model <- paste0(model, '
+      y1t', t, ' ~~ y1t', t + 1, '
+      y2t', t, ' ~~ y2t', t + 1, '
+      y3t', t, ' ~~ y3t', t + 1, '
+      y4t', t, ' ~~ y4t', t + 1, '
+      y5t', t, ' ~~ y5t', t + 1, '
+      y6t', t, ' ~~ y6t', t + 1, '
+      ')
+  }
+  
+  return(model)
+}
+
 

@@ -193,6 +193,7 @@ getfit <- function(fit1,y,y.2){
   x_mean.2 <- array(NA,c(nvar,Nt))
   x_cov.2 <- array(NA,c(nvar,nvar,Nt))
   
+  
   ################################################################
   # 2a. global loglikelihood and chisq
   ################################################################
@@ -206,7 +207,7 @@ getfit <- function(fit1,y,y.2){
       logliki.1[j,] <- getloglik(y.2,muy.1[j,],sigmay.1[,,j])
     }
     
-    loglik.1 <- apply(logliki.1,1,sum)
+    loglik.1 <- apply(logliki.1, 1, sum)
     logliksat.1 <- sum(getloglik(y.2,x_mean.1,round(x_cov.1,4))) # loglik sum for all
     chisqs.1 <- getchisq.mcmc(loglik.1,logliksat.1)
   }
@@ -277,11 +278,31 @@ getfit <- function(fit1,y,y.2){
     BadjGamma.devm.2[,m] <- 1-pstar.2/(pstar.2-pd.2[m])*(1-BGamma.devm.2[,m])
   }
   
+  
+  #### BCFI, BTLI, BNFI 
+  BCFI <- 1 - (mean(loglik.1) / logliksat.1)
+  
+  
+  
   out <- list(round(c(mean(BRMSEA.devm.1),mean(BGamma.devm.1),mean(BadjGamma.devm.1),mean(BMc.devm.1)),3),
               round(cbind(apply(BRMSEA.devm.2,2,mean),apply(BGamma.devm.2,2,mean),apply(BadjGamma.devm.2,2,mean),apply(BMc.devm.2,2,mean)),3))
   
   names(out)[[1]] <- c("BRMSEA","BGammahat","adjBGammahat","BMc")
-  out
+  
+  out2 <- list(
+    round(mean(BRMSEA.devm.1), 3),        # BRMSEA 
+    round(mean(BGamma.devm.1), 3),        # BGamma 
+    round(mean(BadjGamma.devm.1), 3),     # BadjGamma 
+    round(mean(BMc.devm.1), 3),           # BMc 
+    pd.1,                                 # pd value for overall model
+    p.1,                                  # number of estimated parameters
+    mean(loglik.1),
+    logliksat.1,                           # Saturated log likelihood for overall model
+    mean(chisqs.1)
+  )  
+  names(out2) <- c("BRMSEA", "BGammahat", "adjBGammahat", "BMc", "pd_1", "p_1", "loglik", "logliksat_1", "chisqs")
+  
+  out2
 
 }
 

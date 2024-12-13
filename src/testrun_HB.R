@@ -43,10 +43,12 @@ td   <- diag(6)*(1 - ly00^2) # cond. var(y) -> res var
 dat1 <- gendata01(N = Person_size, Nt = Timepoints, phi0, mu0, ar0, ly0, ly1 = matrix(0,6,2), td)
 length(dat1)
 
-ydat <- dat1$y #use array version of data for stan
+ydat <- dat1$y # use array version of data for stan
 dim(ydat) #NtxN#nitems, ok
 
 ydat2 <- dat1$y0 # use the transformed version in the getfit function (calculate covariance matrix for saturated model)
+
+
 
 #################################################
 # analyze dat with stan
@@ -58,14 +60,32 @@ params2 <- c("ly","sigmaeps","sigmaeta1","sigmaeta2","ty","ka","beta1") # parame
 
 data.stan1 <- list(N=Person_size,Nt=Timepoints,y=ydat)#,x_cov=round(cov(y.2),4),x_mean=round(apply(y.2,2,mean),4))
 fit1 <- sampling(sm1, data=data.stan1)
+print(fit1, params2) # parameter estimates -> check convergence
 
-print(fit1,params2) # parameter estimates -> check convergence
-modelfit <- getfit(fit1,ydat,ydat2) # estimate bayesian fit (without cfi/nfi at this point)
+
+modelfit <- getfit(fit1, ydat, ydat2) # estimate bayesian fit (without cfi/nfi at this point)
 #modelfit[[1]] # please ignore the second list element for now
-fitresults1 <- matrix(modelfit[[1]],nrow=1)
-colnames(fitresults1) <- c("BRMSEA","BGammahat","adjBGammahat","BMc")
+#fitresults1 <- matrix(modelfit[[1]], nrow = 1)
+#colnames(fitresults1) <- c("BRMSEA", "BGammahat", "adjBGammahat", "BMc")
+
+fitresults1 <- matrix(modelfit, nrow = 1)
+colnames(fitresults1) <-  c("BRMSEA", "BGammahat", "adjBGammahat", "BMc", "pd_1", "p_1", "loglik", "logliksat_1", "chisqs")
+
 fitresults1
 # -> results are slightly different than blavaan, check if this is sample size or prior specific? Script should be correct.
+
+
+# trying out a function fro run_sim_all_models
+fitm_stan <- matrix(NA, N_sim_samples, length(fitnom_stan))
+fit_st <- fit_model_stan(ydat, ydat2, Timepoints, Person_size)
+fit_st <- as.numeric(fit_st)
+fitm_stan[1, ] = fit_st
+
+#modelfit <- getfit(fit1, ydat, ydat2)
+#fitresults1 <- matrix(modelfit, nrow = 1)
+#colnames(fitresults1) <- fitnom_stan
+#fitresults1
+                    
 
 
 #################################################
@@ -75,8 +95,27 @@ library(blavaan)
 sem.bl1 <- bsem(dsem[[Timepoints]], ydat2, 
                 n.chains = 4, burnin = 1000, sample = 1000) # use similar conditions as stan to make it comparable
 summary(sem.bl1,fit=T)
+f1.sem.bl1 <- blavFitIndices(sem.bl1, fit.measures = "all") # relevant indices
 
-f1.sem.bl1 <- blavFitIndices(sem.bl1) # relevant indices
+# all kinds of fit indices
+fit_indices <- blavFitIndices(sem.bl1, baseline.model = fit_null) 
+BRMSEA <- mean(fit_indices@indices$BRMSEA)
+BGammaHat <- mean(fit_indices@indices$BGammaHat)
+adjBGammaHat <- mean(fit_indices@indices$adjBGammaHat)
+BMc <- mean(fit_indices@indices$BMc)
+BCFI <- mean(fit_indices@indices$BCFI)
+BTLI <- mean(fit_indices@indices$BTLI)
+BNFI <- mean(fit_indices@indices$BNFI)
+npar <- blavInspect(sem.bl1, "npar")
+marg_loglik <- blavInspect(sem.bl1, "test")[[1]]$stat
+ppp <- blavInspect(sem.bl1, "test")[[2]]$stat
+chisq <- mean(fit_indices@details$chisq)
+pd <- fit_indices@details$pD
+
+# try out function from run_sim_all_models
+fitm_blavaan <- matrix(NA, N_sim_samples, length(fitnom_blavaan))
+fit_bl = fit_model_blav(ydat2, Timepoints)
+fitm_blavaan[1, ] <- fit_bl
 
 
 
@@ -101,12 +140,16 @@ fit_strict <- bsem(strict_invariance_model(Timepoints), ydat2,
 fit_null <- bsem(null_model(Timepoints), ydat2, 
                  n.chains = 4, burnin = 1000, sample = 1000)
 
+fit_null_res <- bsem(null_model_corr_res(Timepoints), ydat2, 
+                 n.chains = 4, burnin = 1000, sample = 1000)
+
 
 f1.sem.bl1_inv <- blavFitIndices(sem.bl1, baseline.model = fit_conv_inv) # relevant indices
 #f1.sem.bl1_weak <- blavFitIndices(sem.bl1, baseline.model = fit_weak_inv) # relevant indices
 f1.sem.bl1_strong <- blavFitIndices(sem.bl1, baseline.model = fit_strong) # relevant indices
 f1.sem.bl1_strict <- blavFitIndices(sem.bl1, baseline.model = fit_strong) # relevant indices
 f1.sem.bl1_null <- blavFitIndices(sem.bl1, baseline.model = fit_null) # relevant indices
+f1.sem.bl1_null_res <- blavFitIndices(sem.bl1, baseline.model = fit_null_res, fit.measures = "all") # relevant indices
 
 
 f1.sem.bl1_inv
@@ -114,18 +157,25 @@ f1.sem.bl1_inv
 f1.sem.bl1_strong
 f1.sem.bl1_strict
 f1.sem.bl1_null
-
+f1.sem.bl1_null_res
 
 #f2.sem.bl1 <- fitmeasures(sem.bl1) # some other fit indices like aic etc., ignore for now
 
 
+
+
+#################################################
+# analyze dat with lavaan
+#################################################
+
 library(lavaan)
-sem.l1 <- sem(dsem[[Timepoints]],ydat2) # use similar conditions as stan to make it comparable
+sem.l1 <- sem(dsem[[Timepoints]], ydat2)
+fitmeasures(sem.l1) # use similar conditions as stan to make it comparable
 summary(sem.l1,fit=T)
 
-
-
-
+fitm_lavaan <- matrix(NA, N_sim_samples, length(fitnom_lavaan))
+fit_la = fit_model_lav(ydat2, Timepoints)
+fitm_lavaan[1, ] <- fit_la
 
 
 
@@ -146,20 +196,6 @@ cbind(unlist(sem.bl1@external$mcmcout@sim$samples[[1]][paste0("log_lik_sat[",i,"
       unlist(sem.bl1@external$mcmcout@sim$samples[[2]][paste0("log_lik_sat[",i,"]")])[1:1000+1000],
       unlist(sem.bl1@external$mcmcout@sim$samples[[3]][paste0("log_lik_sat[",i,"]")])[1:1000+1000],
       unlist(sem.bl1@external$mcmcout@sim$samples[[4]][paste0("log_lik_sat[",i,"]")])[1:1000+1000])
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
