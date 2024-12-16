@@ -20,21 +20,27 @@ i <- 2
 #    library(matrixcalc)
 #    library(lavaan)
     
-    
-    #setwd("C:\\holger\\SEM\\modelfit\\stanversion")
-    source("C:/holger/SEM/modelfit/stanversion/funs/lavaan_dsem_models_randomintercept_tt.R")
-    source("C:/holger/SEM/modelfit/stanversion/funs/lavaan_dsem_models_randomintercept_tt1.R")
+#current_dir <- dirname(rstudioapi::getActiveDocumentContext()$path) # RStudio
+current_dir <- "/Users/kimzierahn/PycharmProjects/dsem_modelfit/"
+
+    source(file.path(current_dir, "src/lavaan_dsem_models_randomintercept_tt.R"))
+    source(file.path(current_dir, "src/lavaan_dsem_models_randomintercept_tt1.R"))
     #source("C:/holger/SEM/modelfit/stanversion/funs/lavaan_dsem_models_comp1.R")
     #source("C:/holger/SEM/modelfit/stanversion/funs/lavaan_dsem_models_comp2.R")
-    source("C:/holger/SEM/modelfit/stanversion/funs/gen_data_version03.R")
-    source("C:/holger/SEM/modelfit/stanversion/funs/gen_data_version04.R")
+    source(file.path(current_dir, "funs/gen_data_version03.R"))
+    source(file.path(current_dir, "funs/gen_data_version04.R"))
     
     ##########################
-    person_size_SIMULATE <- c(91,121, 151, 181,211,501,1001,1501,2001,2501,61,31) 
-    time_point_SIMULATE <- c(1:5,10,15) # Nt
+    #person_size_SIMULATE <- c(91,121, 151, 181,211,501,1001,1501,2001,2501,61,31) 
+    person_size_SIMULATE <- c(31, 91) 
+
+    #time_point_SIMULATE <- c(1:5,10,15) # Nt
+    time_point_SIMULATE <- c(1, 2)
+    
     model_TRUE_MISS_SIMULATE <- c(.3,.6)
     type_TRUE_MISS_SIMULATE <- c("tt","tt1") # within time points, between time points #"none",
-    run_Samples_SIMULATE <- 125
+    #run_Samples_SIMULATE <- 125
+    run_Samples_SIMULATE <- 3
     ##########################
     
     
@@ -94,7 +100,7 @@ i <- 2
             #####################################################################
             if(type_MISS=="none"){#i<-1
               model_TRUE_MISS <- 0
-              name_local_SIMULATE_Info <- paste("C:\\holger\\SEM\\modelfit\\stanversion\\results_lavaan_version03_rand\\local", as.character(person_size), 
+              name_local_SIMULATE_Info <- paste(current_dir, as.character(person_size), 
                                                 as.character(time_point),as.character(type_MISS),as.character(model_TRUE_MISS),i ,"_version03_rand", sep = "_")
               
               #######################################
@@ -127,7 +133,7 @@ i <- 2
             }else{
               #type_MISS <- "tt1"
               for(model_TRUE_MISS in model_TRUE_MISS_SIMULATE){#model_TRUE_MISS<-.3
-                name_local_SIMULATE_Info <- paste("C:\\holger\\SEM\\modelfit\\stanversion\\results_lavaan_version03_rand\\local", as.character(person_size), 
+                name_local_SIMULATE_Info <- paste(current_dir, as.character(person_size), 
                                                   as.character(time_point),as.character(type_MISS),as.character(model_TRUE_MISS),i ,"_version03_rand", sep = "_")
                 
                 #######################################

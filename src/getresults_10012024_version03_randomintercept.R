@@ -6,11 +6,14 @@ setwd("C:\\holger\\SEM\\modelfit\\stanversion")
 ###    SIMULATION STARTS HERE
 ###################################
 
-person_size_SIMULATE <- c(91,121, 151, 181,211,61,31,501,1001,1501,2001,2501) #
-time_point_SIMULATE <- c(1:5,10,15,30) # Nt ,30
+person_size_SIMULATE <- c(31, 61, 91, 121, 151, 181, 211)
+#person_size_SIMULATE <- c(91,121, 151, 181,211,61,31,501,1001,1501,2001,2501) #
+time_point_SIMULATE <- c(1, 2, 3, 4)
+#time_point_SIMULATE <- c(1:5,10,15,30) # Nt ,30
 model_TRUE_MISS_SIMULATE <- c(0,.3,.6)
-type_TRUE_MISS_SIMULATE <- c("tt","tt1") # within time points, between time points #"none", HB: taken out because true tt/tt1 model used for type I error rates
-run_Samples_SIMULATE <- 125
+type_TRUE_MISS_SIMULATE <- c("tt","tt1", "none") # within time points, between time points #"none", HB: taken out because true tt/tt1 model used for type I error rates
+run_Samples_SIMULATE <- 3
+#run_Samples_SIMULATE <- 125
 runpcs <- 2
 
 # FIT INDICES WE ARE ACTUALLY INTERESTED IN
@@ -38,7 +41,8 @@ getstuff <- function(name_local_SIMULATE_Info){
   }
 }
 
-current_dir <- "~/PycharmProjects/dsem_modelfit/src/"
+current_dir <- "~/PycharmProjects/dsem_modelfit/exp/2024-12-14/"
+setwd(current_dir)
 
 ijk <- 1
 for (time_point in time_point_SIMULATE) {
@@ -52,79 +56,100 @@ for (time_point in time_point_SIMULATE) {
         
         if(time_point*6<person_size){
           
+          if ((type_MISS == "tt" && model_TRUE_MISS == 0) || 
+              (type_MISS == "tt1" && model_TRUE_MISS == 0) || 
+              (type_MISS == "none" && model_TRUE_MISS == 0.3) || 
+              (type_MISS == "none" && model_TRUE_MISS == 0.6)) {
+            next # Skip to the next iteration
+          }
+          
           res1 <- res2 <- data.frame(matrix(NA,1,length(fitnom.res1)))
           colnames(res1) <- colnames(res2) <- fitnom.res1
+          
           for(i in 1:runpcs){
             
             # MISSSPECIFICATIONS
-            name_local_SIMULATE_Info <- paste(current_dir, as.character(person_size), as.character(time_point), as.character(type_MISS), 
-                                              as.character(model_TRUE_MISS), core, "_version03_rand", sep = "_")
+            #name_local_SIMULATE_Info <- paste(current_dir, as.character(person_size), as.character(time_point), as.character(type_MISS), 
+            #                                  as.character(model_TRUE_MISS), core, "_version03_rand", sep = "_")
             
             # TRUE DGP
-            name_local_SIMULATE_Info2 <- paste("C:\\holger\\SEM\\modelfit\\stanversion\\results_lavaan_version03_rand\\local", as.character(person_size), 
-                                              as.character(time_point),as.character(type_MISS),as.character(model_TRUE_MISS),i ,"_version03_rand_true.RDS", sep = "_")
+            #name_local_SIMULATE_Info2 <- paste("C:\\holger\\SEM\\modelfit\\stanversion\\results_lavaan_version03_rand\\local", as.character(person_size), 
+            #                                  as.character(time_point),as.character(type_MISS),as.character(model_TRUE_MISS),i ,"_version03_rand_true.RDS", sep = "_")
             
+            # MISSSPECIFICATIONS
+            Exp_name_info_miss <- paste("lavaan", person_size, time_point, type_MISS,
+                                   model_TRUE_MISS, "1__version03_rand.csv", sep = "_")
             
-            res11 <- getstuff(name_local_SIMULATE_Info)
-            res21 <- getstuff(name_local_SIMULATE_Info2)
-            colnames(res21) <- colnames(res11) <- fitnom.res1
+            # TRUE DGP
+            Exp_name_info_true <- paste("lavaan_true", person_size, time_point, type_MISS,
+                                   model_TRUE_MISS, "1__version03_rand.csv", sep = "_")
+            
+            pattern_miss <- paste0(current_dir, Exp_name_info_miss)
+            pattern_true <- paste0(current_dir, Exp_name_info_true)
+            
+            res11_miss <- getstuff(pattern_miss)
+            res21_true <- getstuff(pattern_true)
+            
+            #res11 <- getstuff(name_local_SIMULATE_Info)
+            #res21 <- getstuff(name_local_SIMULATE_Info2)
+            #colnames(res1_no) <- colnames(res11) <- fitnom.res1
 
-            res1 <- rbind(res1,res11)
-            res2 <- rbind(res2,res21)
+            res1_miss <- rbind(res1, res11_miss)
+            res2_true <- rbind(res2, res21_true)
           }
           #colnames(res11) <- colnames(res1m2) <- colnames(res1m2) <- colnames(res0)
           #colnames(res1m12) <- colnames(res1m13) <- c("chi2","chi2_p")
           
-          res1 <- data.frame(res1[-1,])
-          res2 <- data.frame(res2[-1,])
+          res1_miss <- data.frame(res1_miss[-1,])
+          res2_true <- data.frame(res2_true[-1,])
           
-          res1$cgfi <- res1$gfi+(Nt*6+1)*Nt*6/res1$npar/N
-          res2$cgfi <- res2$gfi+(Nt*6+1)*Nt*6/res2$npar/N
+          res1_miss$cgfi <- res1_miss$gfi+(Nt*6+1)*Nt*6/res1_miss$npar/N
+          res2_true$cgfi <- res2_true$gfi+(Nt*6+1)*Nt*6/res2_true$npar/N
           
-          #dim(res1)
+          #dim(res1_miss)
           # average scores m false (except none)
           # FIT INDICES FOR WRONG MODEL
           # AVERAGE SCORES
-          res3false[ijk,1] <- mean(res1$chisq/res1$df,na.rm=T) # CHI2
-          res3false[ijk,1:length(fitnom)+1] <- apply(res1[fitnom],2,mean,na.rm=T)
-          res3false[ijk,length(fitnom)+2] <- length(na.omit(res1$npar)) # LENGHT OF MISSING DATA
+          res3false[ijk,1] <- mean(res1_miss$chisq/res1_miss$df,na.rm=T) # CHI2
+          res3false[ijk,1:length(fitnom)+1] <- apply(res1_miss[fitnom],2,mean,na.rm=T)
+          res3false[ijk,length(fitnom)+2] <- length(na.omit(res1_miss$npar)) # LENGHT OF MISSING DATA
           
           # average scores m true
           # FIT INDICES FOR TRUE MODEL
-          res3true[ijk,1] <- mean(res2$chisq/res1$df,na.rm=T)
-          res3true[ijk,1:length(fitnom)+1] <- apply(res2[fitnom],2,mean,na.rm=T)
-          res3true[ijk,length(fitnom)+2] <- length(na.omit(res2$npar))
+          res3true[ijk,1] <- mean(res2_true$chisq/res1_miss$df,na.rm=T)
+          res3true[ijk,1:length(fitnom)+1] <- apply(res2_true[fitnom],2,mean,na.rm=T)
+          res3true[ijk,length(fitnom)+2] <- length(na.omit(res2_true$npar))
           
           # CUT OFFS
           #cutoffs good fit (misfit): percentage of rejection
-          res4false[ijk,1] <- 1-mean(res1$pvalue>.05,na.rm=T) # if p-value is larger than 5% then its 1 = percentage of rejection = POWER
-          res4false[ijk,2] <- 1-mean(res1$chisq < 2*res1$df,na.rm=T)
-          res4false[ijk,3] <- 1-mean(res1$cfi > .95,na.rm=T)
-          res4false[ijk,4] <- 1-mean(res1$tli > .97,na.rm=T)
-          res4false[ijk,5] <- 1-mean(res1$rmsea < .05,na.rm=T)
-          res4false[ijk,6] <- 1-mean(res1$srmr < .05,na.rm=T)
-          res4false[ijk,7] <- 1-mean(res1$gfi > .95,na.rm=T)
-          res4false[ijk,8] <- 1-mean(res1$agfi > .95,na.rm=T)
-          res4false[ijk,9] <- 1-mean(res1$cgfi > .95,na.rm=T)
+          res4false[ijk,1] <- 1-mean(res1_miss$pvalue>.05,na.rm=T) # if p-value is larger than 5% then its 1 = percentage of rejection = POWER
+          res4false[ijk,2] <- 1-mean(res1_miss$chisq < 2*res1_miss$df,na.rm=T)
+          res4false[ijk,3] <- 1-mean(res1_miss$cfi > .95,na.rm=T)
+          res4false[ijk,4] <- 1-mean(res1_miss$tli > .97,na.rm=T)
+          res4false[ijk,5] <- 1-mean(res1_miss$rmsea < .05,na.rm=T)
+          res4false[ijk,6] <- 1-mean(res1_miss$srmr < .05,na.rm=T)
+          res4false[ijk,7] <- 1-mean(res1_miss$gfi > .95,na.rm=T)
+          res4false[ijk,8] <- 1-mean(res1_miss$agfi > .95,na.rm=T)
+          res4false[ijk,9] <- 1-mean(res1_miss$cgfi > .95,na.rm=T)
           
-          res4true[ijk,1] <- 1-mean(res2$pvalue>.05,na.rm=T) # TYPE 1 ERROR RATES
-          res4true[ijk,2] <- 1-mean(res2$chisq < 2*res1$df,na.rm=T)
-          res4true[ijk,3] <- 1-mean(res2$cfi > .95,na.rm=T)
-          res4true[ijk,4] <- 1-mean(res2$tli > .97,na.rm=T)
-          res4true[ijk,5] <- 1-mean(res2$rmsea < .05,na.rm=T)
-          res4true[ijk,6] <- 1-mean(res2$srmr < .05,na.rm=T)
-          res4true[ijk,7] <- 1-mean(res2$gfi > .95,na.rm=T)
-          res4true[ijk,8] <- 1-mean(res2$agfi > .95,na.rm=T)
-          res4true[ijk,9] <- 1-mean(res2$cgfi > .95,na.rm=T)
+          res4true[ijk,1] <- 1-mean(res2_true$pvalue>.05,na.rm=T) # TYPE 1 ERROR RATES
+          res4true[ijk,2] <- 1-mean(res2_true$chisq < 2*res1_miss$df,na.rm=T)
+          res4true[ijk,3] <- 1-mean(res2_true$cfi > .95,na.rm=T)
+          res4true[ijk,4] <- 1-mean(res2_true$tli > .97,na.rm=T)
+          res4true[ijk,5] <- 1-mean(res2_true$rmsea < .05,na.rm=T)
+          res4true[ijk,6] <- 1-mean(res2_true$srmr < .05,na.rm=T)
+          res4true[ijk,7] <- 1-mean(res2_true$gfi > .95,na.rm=T)
+          res4true[ijk,8] <- 1-mean(res2_true$agfi > .95,na.rm=T)
+          res4true[ijk,9] <- 1-mean(res2_true$cgfi > .95,na.rm=T)
           
           # good fit is enough:
           #cutoffs acceptable fit
-          #res4[ijk,1] <- 1-mean(res1$pvalue>.05,na.rm=T)
-          #res4[ijk,2] <- 1-mean(res1$chisq < 3*res1$df,na.rm=T)
-          #res4[ijk,3] <- 1-mean(res1$cfi > .90,na.rm=T)
-          #res4[ijk,4] <- 1-mean(res1$tli > .95,na.rm=T)
-          #res4[ijk,5] <- 1-mean(res1$rmsea < .08,na.rm=T)
-          #res4[ijk,6] <- 1-mean(res1$srmr < .08,na.rm=T)
+          #res4[ijk,1] <- 1-mean(res1_miss$pvalue>.05,na.rm=T)
+          #res4[ijk,2] <- 1-mean(res1_miss$chisq < 3*res1_miss$df,na.rm=T)
+          #res4[ijk,3] <- 1-mean(res1_miss$cfi > .90,na.rm=T)
+          #res4[ijk,4] <- 1-mean(res1_miss$tli > .95,na.rm=T)
+          #res4[ijk,5] <- 1-mean(res1_miss$rmsea < .08,na.rm=T)
+          #res4[ijk,6] <- 1-mean(res1_miss$srmr < .08,na.rm=T)
           
           
           
@@ -135,6 +160,7 @@ for (time_point in time_point_SIMULATE) {
     }
   }
 }
+
 
 #save all data
 res3false2 <- res3false
@@ -178,7 +204,7 @@ cond0$type <- as.factor(cond0$type)
 colnames(res3false) <- colnames(res3true) <- c("chi2/df",fitnom,"nconv")
 colnames(res4false) <- colnames(res4true) <- c("chi2_p","chi2/df",fitnom)
 
-#cbind(cond0,res2)
+#cbind(cond0,res2_true)
 cbind(cond0,res3false)
 cbind(cond0,res4false)
 
@@ -242,23 +268,23 @@ pdf("type1error01_v1.pdf",height=3*4,width=2*4) # create PDF
 par(mfrow=c(3,2))
 
 # LABELING:
-plotfun(res3,miss0=0,misstyp="none",who="chi2_p",woline=.05,ord=T)
-plotfun(res3,miss0=0,misstyp="none",who="chi2/df",woline=.05,ord=T)
-plotfun(res3,miss0=0,misstyp="none",who="rmsea",woline=.05,ord=T)
-plotfun(res3,miss0=0,misstyp="none",who="srmr",woline=.05,ord=T)
-plotfun(res3,miss0=0,misstyp="none",who="cfi",woline=.05,ord=T)
-plotfun(res3,miss0=0,misstyp="none",who="tli",woline=.05,ord=T)
+plotfun(res4false,miss0=0,misstyp="none",who="chi2_p",woline=.05,ord=T)
+plotfun(res4false,miss0=0,misstyp="none",who="chi2/df",woline=.05,ord=T)
+plotfun(res4false,miss0=0,misstyp="none",who="rmsea",woline=.05,ord=T)
+plotfun(res4false,miss0=0,misstyp="none",who="srmr",woline=.05,ord=T)
+plotfun(res4false,miss0=0,misstyp="none",who="cfi",woline=.05,ord=T)
+plotfun(res4false,miss0=0,misstyp="none",who="tli",woline=.05,ord=T)
 dev.off()
 
 #######################################################################
 pdf("power_small_within_v1.pdf",height=3*4,width=2*4)
 par(mfrow=c(3,2))
-plotfun(res3,miss0=0.3,misstyp="tt",who="chi2_p",woline=.80,ord=T)
-plotfun(res3,miss0=0.3,misstyp="tt",who="chi2/df",woline=.80,ord=T)
-plotfun(res3,miss0=0.3,misstyp="tt",who="rmsea",woline=.80,ord=T)
-plotfun(res3,miss0=0.3,misstyp="tt",who="srmr",woline=.80,ord=T)
-plotfun(res3,miss0=0.3,misstyp="tt",who="cfi",woline=.80,ord=T)
-plotfun(res3,miss0=0.3,misstyp="tt",who="tli",woline=.80,ord=T)
+plotfun(res4false,miss0=0.3,misstyp="tt",who="chi2_p",woline=.80,ord=T)
+plotfun(res4false,miss0=0.3,misstyp="tt",who="chi2/df",woline=.80,ord=T)
+plotfun(res4false,miss0=0.3,misstyp="tt",who="rmsea",woline=.80,ord=T)
+plotfun(res4false,miss0=0.3,misstyp="tt",who="srmr",woline=.80,ord=T)
+plotfun(res4false,miss0=0.3,misstyp="tt",who="cfi",woline=.80,ord=T)
+plotfun(res4false,miss0=0.3,misstyp="tt",who="tli",woline=.80,ord=T)
 dev.off()
 
 pdf("power_large_within_v1.pdf",height=3*4,width=2*4)
@@ -303,7 +329,7 @@ dev.off()
 # x-axis is Nt and separate lines for N, looks better
 ##########################################################################
 plotfun2 <- function(dat,miss0,misstyp,who,woline=.8,not1=F){
-  #dat<-res2
+  #dat<-res2_true
   #miss0<-0
   #who<-"chi2_p"
   par(new=F)
@@ -341,28 +367,29 @@ plotfun2 <- function(dat,miss0,misstyp,who,woline=.8,not1=F){
   legend("topleft",paste0("N=",levels(cond0$N.f)),lty=1,col=1:length(levels(cond0$N.f)),pch=1:length(levels(cond0$N.f)))
 }
 
+
 #######################################################################
 
 # THE PLOT HE USED IN THE END:
 pdf("type1error01_v2.pdf",height=3*4,width=2*4)
 par(mfrow=c(3,2))
-plotfun2(res3,miss0=0.0,misstyp="none",who="chi2_p",woline=.05)
-plotfun2(res3,miss0=0.0,misstyp="none",who="chi2/df",woline=.05)
-plotfun2(res3,miss0=0.0,misstyp="none",who="rmsea",woline=.05)
-plotfun2(res3,miss0=0.0,misstyp="none",who="srmr",woline=.05)
-plotfun2(res3,miss0=0.0,misstyp="none",who="cfi",woline=.05)
-plotfun2(res3,miss0=0.0,misstyp="none",who="tli",woline=.05)
+plotfun2(res3false,miss0=0.0,misstyp="none",who="chi2_p",woline=.05)
+plotfun2(res3false,miss0=0.0,misstyp="none",who="chi2/df",woline=.05)
+plotfun2(res3false,miss0=0.0,misstyp="none",who="rmsea",woline=.05)
+plotfun2(res3false,miss0=0.0,misstyp="none",who="srmr",woline=.05)
+plotfun2(res3false,miss0=0.0,misstyp="none",who="cfi",woline=.05)
+plotfun2(res3false,miss0=0.0,misstyp="none",who="tli",woline=.05)
 dev.off()
 
 #######################################################################
 pdf("power_small_within_v2.pdf",height=3*4,width=2*4)
 par(mfrow=c(3,2))
-plotfun2(res3,miss0=0.3,misstyp="tt",who="chi2_p")
-plotfun2(res3,miss0=0.3,misstyp="tt",who="chi2/df")
-plotfun2(res3,miss0=0.3,misstyp="tt",who="rmsea")
-plotfun2(res3,miss0=0.3,misstyp="tt",who="srmr")
-plotfun2(res3,miss0=0.3,misstyp="tt",who="cfi")
-plotfun2(res3,miss0=0.3,misstyp="tt",who="tli")
+plotfun2(res3false,miss0=0.3,misstyp="tt",who="chi2_p")
+plotfun2(res3false,miss0=0.3,misstyp="tt",who="chi2/df")
+plotfun2(res3false,miss0=0.3,misstyp="tt",who="rmsea")
+plotfun2(res3false,miss0=0.3,misstyp="tt",who="srmr")
+plotfun2(res3false,miss0=0.3,misstyp="tt",who="cfi")
+plotfun2(res3false,miss0=0.3,misstyp="tt",who="tli")
 dev.off()
 
 pdf("power_large_within_v2.pdf",height=3*4,width=2*4)
@@ -402,7 +429,7 @@ dev.off()
 # plots type I error rate and power in the same picture, too crowded
 ##########################################################################
 plotfun3 <- function(dat,miss0,misstyp,who,woline=.8,not1=F){
-  #dat<-res2
+  #dat<-res2_true
   #miss0<-0
   #who<-"chi2_p"
   par(new=F)
@@ -450,17 +477,17 @@ plotfun3 <- function(dat,miss0,misstyp,who,woline=.8,not1=F){
 # TYPE 1 ERROR RATE AND POWER
 pdf("both_small_within_v2.pdf",height=3*4,width=2*4)
 par(mfrow=c(3,2))
-plotfun3(res3,miss0=0.3,misstyp="tt",who="chi2_p")
-plotfun3(res3,miss0=0.3,misstyp="tt",who="chi2/df")
-plotfun3(res3,miss0=0.3,misstyp="tt",who="rmsea")
-plotfun3(res3,miss0=0.3,misstyp="tt",who="srmr")
-plotfun3(res3,miss0=0.3,misstyp="tt",who="cfi")
-plotfun3(res3,miss0=0.3,misstyp="tt",who="tli")
+plotfun3(res3false,miss0=0.3,misstyp="tt",who="chi2_p")
+plotfun3(res3false,miss0=0.3,misstyp="tt",who="chi2/df")
+plotfun3(res3false,miss0=0.3,misstyp="tt",who="rmsea")
+plotfun3(res3false,miss0=0.3,misstyp="tt",who="srmr")
+plotfun3(res3false,miss0=0.3,misstyp="tt",who="cfi")
+plotfun3(res3false,miss0=0.3,misstyp="tt",who="tli")
 dev.off()
 
 pdf("both_large_within_v2.pdf",height=3*4,width=2*4)
 par(mfrow=c(3,2))
-plotfun3(res3,miss0=0.6,misstyp="tt",who="chi2_p")
+plotfun3(res3false,miss0=0.6,misstyp="tt",who="chi2_p")
 plotfun3(res3,miss0=0.6,misstyp="tt",who="chi2/df")
 plotfun3(res3,miss0=0.6,misstyp="tt",who="rmsea")
 plotfun3(res3,miss0=0.6,misstyp="tt",who="srmr")
