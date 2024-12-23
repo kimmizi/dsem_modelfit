@@ -97,12 +97,14 @@ strict_invariance_model <- function(timepoints) {
 
 
 
+
 #########################################################
-#### null model ####
+#### null model 0C ####
 # variables are uncorrelated across time points
+# free intercepts and residual variances
 #########################################################
 
-null_model <- function(timepoints) {
+null_model_0C <- function(timepoints) {
   model <- ''
   
   for (t in 1:timepoints) {
@@ -118,6 +120,94 @@ null_model <- function(timepoints) {
   
   return(model)
 }
+
+
+
+#########################################################
+#### null model 0A ####
+# variables are uncorrelated across time points
+# invariant intercepts and residual variances
+#########################################################
+
+null_model_0A <- function(timepoints) {
+  model <- ""
+  
+  for (t in 1:timepoints){
+    model <- paste0(model, '
+      y1t', t, ' ~~ y1t', t, '
+      y2t', t, ' ~~ y2t', t, '
+      y3t', t, ' ~~ y3t', t, '
+      y4t', t, ' ~~ y4t', t, '
+      y5t', t, ' ~~ y5t', t, '
+      y6t', t, ' ~~ y6t', t, '
+      y1t', t, ' ~ 1*1
+      y2t', t, ' ~ 1*1
+      y3t', t, ' ~ 1*1
+      y4t', t, ' ~ 1*1
+      y5t', t, ' ~ 1*1
+      y6t', t, ' ~ 1*1
+      ')
+  }
+  
+  # Residual Variance invariant across time points
+  #for (v in 1:6) { # Loop over variables y1 to y6
+  #  var_name <- paste0("y", v, "t") # Append "t" to indicate timepoint
+  #  for (t in 1:(timepoints - 1)) { # Loop over time points
+  #    next_time <- t + 1
+  #    if (t == 1) {
+  #      # First time point sets the constraint
+  #      model <- paste0(model, 
+  #                      sprintf("%s%d ~~ %s%d\n", var_name, t, var_name, next_time))
+  #    } else {
+  #      # Apply equality constraint for subsequent time points
+  #      model <- paste0(model, 
+  #                      sprintf("%s%d ~~ equal(\"%s%d ~~ %s%d\")*%s%d\n", 
+  #                              var_name, t, var_name, t - 1, var_name, t, var_name, next_time))
+  #    }
+  #  }
+  #}
+
+  for (v in 1:6) { # Loop over variables y1 to y6
+    var_name <- paste0("y", v, "t") # Append "t" to indicate timepoint
+    for (t in 1:(timepoints - 1)) { # Loop over time points
+      next_time <- t + 1
+      model <- paste0(model, 
+                      sprintf("%s%d ~~ 0.5*%s%d\n", var_name, t, var_name, t+1))
+    }
+  }
+  
+  # Intercepts invariant across time points
+  for (t in 1:(timepoints-1)) {
+    model <- paste(model, sprintf('
+      y1t%d ~ 1*y1t%d
+      y2t%d ~ 1*y2t%d
+      y3t%d ~ 1*y3t%d
+      y4t%d ~ 1*y4t%d
+      y5t%d ~ 1*y5t%d
+      y6t%d ~ 1*y6t%d
+    ', t, t+1, t, t+1, t, t+1, t, t+1, t, t+1, t, t+1), sep="\n")
+  }
+  
+  #for (var in 1:6) {  # Loop over variables y1 to y6
+  #  for (t in 1:timepoints) {  # Loop over timepoints
+  #    if (t == 1) {
+  #      # First timepoint gets the base intercept
+  #      model <- paste0(model, sprintf("y%dt%d ~ 1\n", var, t))
+  #    } else {
+  #      # Subsequent timepoints have equal intercepts to the first timepoint
+  #      model <- paste0(
+  #        model, 
+  #        sprintf("y%dt%d ~ equal(\"y%dt1 ~ 1\") * 1\n", var, t, var)
+  #      )
+  #    }
+  #  }
+  #}
+  
+  return(model)
+}
+
+
+null_model_0A(3)
 
 
 
