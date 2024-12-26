@@ -23,7 +23,7 @@ source("fitfunctions_stan.R")
 # data
 #################################################
 Person_size <- c(91)
-Timepoints <- 5 # N_timep
+Timepoints <- 3 # N_timep
 Size_crossloading <- c(0,.3,.6)
 Type_crossloading <- c("none","tt","tt1")
 N_sim_samples <- 3
@@ -114,9 +114,17 @@ pd <- fit_indices@details$pD
 
 # try out function from run_sim_all_models
 fitm_blavaan <- matrix(NA, N_sim_samples, length(fitnom_blavaan))
-fit_bl = fit_model_blav(ydat2, Timepoints)
-fitm_blavaan[1, ] <- fit_bl
 
+fit_bl = fit_model_blav(ydat2, Timepoints)
+fit_bl
+
+fitm_blavaan[1, ] <- fit_bl
+fitm_blavaan
+
+
+bl_0A = bsem(null_model_0A(Timepoints), data = ydat2, 
+     n.chains = 4, burnin = 1000, sample = 1000)
+summary(bl_0A)
 
 
 #################################################
