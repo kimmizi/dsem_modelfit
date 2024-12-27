@@ -37,8 +37,6 @@ source(file.path(current_dir,  "gen_data_version03.R"))
 source(file.path(current_dir,  "gen_data_version04.R"))
 source(file.path(current_dir,  "lavaan_dsem_nullmodels.R"))
 source(file.path(current_dir,  "fitfunctions_stan.R"))
-source(file.path(current_dir,  "lavaan_dsem_models_randomintercept_tt.R"))
-source(file.path(current_dir,  "lavaan_dsem_models_randomintercept_tt1.R"))
 
 # working dir
 setwd(current_dir)
@@ -93,8 +91,10 @@ fitnom_lavaan <- c("npar","fmin","chisq","df","pvalue","baseline.chisq","baselin
 
 # bayesian fit indices
 fitnom_blavaan <- c("npar", "PPP", "MargLogLik", 
-                    "BRMSEA", "BGammaHat", "adjBGammaHat", 
-                    "BMc", "BCFI", "BTLI", "BNFI", "chisq", "pd")
+                    "BRMSEA", "BGammaHat", "adjBGammaHat", "BMc", 
+                    "BCFI_0C", "BTLI_0C", "BNFI_0C",
+                    "BCFI_0A", "BTLI_0A", "BNFI_0A",
+                    "chisq", "pd")
 
 fitnom_stan <- c("BRMSEA", "BGammahat", "adjBGammahat", 
                  "BMc", "pd_1", "p_1", "loglik", "logliksat_1", "chisq")
@@ -128,41 +128,14 @@ fit_model_lav <- function(y0, N_timep){
       fitmeasures(res1)  
     }
     else { # if model did not converge: save NAs so that simulation doesnt get broken
-      print("noconvergence")
       return(rep(NA, length(fitnom_lavaan)))
     }
   } 
   else { # if there is a try-error: save NAs so that simulation doesnt get broken
-    print("tryerror")
     return(rep(NA, length(fitnom_lavaan)))
   }
 }
 
-
-fit_model_lav_true <- function(y0, N_timep, type_MISS){ 
-  
-  if(type_MISS=="tt"){
-    res1 <- try(sem(dsem.tt[[N_timep]], data = y0, std.lv = TRUE, se = "none"), silent = TRUE)
-  }else{
-    res1 <- try(sem(dsem.tt1[[N_timep]], data = y0, std.lv = TRUE, se = "none"), silent = TRUE)
-  }
-  
-  # if there is no try-error
-  if(!inherits(res1, "try-error")){ 
-    # if model converged: save fit indices
-    if(res1@optim$converged == T){ 
-      fitmeasures(res1)  
-    }
-    else { # if model did not converge: save NAs so that simulation doesnt get broken
-      print("noconvergence")
-      return(rep(NA, length(fitnom_lavaan)))
-    }
-  } 
-  else { # if there is a try-error: save NAs so that simulation doesnt get broken
-    print("tryerror")
-    return(rep(NA, length(fitnom_lavaan)))
-  }
-}
 
 
 #### Bayesian models ####
@@ -170,24 +143,41 @@ fit_model_lav_true <- function(y0, N_timep, type_MISS){
 ### BLAVAAN ###
 fit_model_blav <- function(y0, N_timep){ 
   
+  print("nullmodel_0A")
+  nullmodel_0A <- try(bsem(null_model_0A(N_timep), data = y0, 
+                           n.chains = 4, burnin = 1000, sample = 1000), silent = TRUE)
+  
+  print("res1")
   res1 <- try(bsem(dsem[[N_timep]], data = y0, std.lv = TRUE,
                    n.chains = 4, burnin = 1000, sample = 1000), silent = TRUE)
   
-  nullmodel <- try(bsem(null_model(N_timep), data = y0, 
+  print("nullmodel_0C")
+  nullmodel_0C <- try(bsem(null_model_0C(N_timep), data = y0, 
                         n.chains = 4, burnin = 1000, sample = 1000), silent = TRUE)
-  
+
   # if there is no try-error
   if(!inherits(res1, "try-error")){ 
     # if model converged: save fit indices
     if(blavInspect(res1, "converged") == TRUE){ 
-      fit_indices <- blavFitIndices(res1, baseline.model = nullmodel) 
+      
+      # try out first nullmodel
+      fit_indices <- blavFitIndices(res1, baseline.model = nullmodel_0C) 
+      BCFI_0C <- mean(fit_indices@indices$BCFI)
+      BTLI_0C <- mean(fit_indices@indices$BTLI)
+      BNFI_0C <- mean(fit_indices@indices$BNFI)
+      
+      # try out different nullmodel
+      fit_indices <- blavFitIndices(res1, baseline.model = nullmodel_0A) 
+      BCFI_0A <- mean(fit_indices@indices$BCFI)
+      BTLI_0A <- mean(fit_indices@indices$BTLI)
+      BNFI_0A <- mean(fit_indices@indices$BNFI)
+      
+      # remaining fit indices
       BRMSEA <- mean(fit_indices@indices$BRMSEA)
       BGammaHat <- mean(fit_indices@indices$BGammaHat)
       adjBGammaHat <- mean(fit_indices@indices$adjBGammaHat)
       BMc <- mean(fit_indices@indices$BMc)
-      BCFI <- mean(fit_indices@indices$BCFI)
-      BTLI <- mean(fit_indices@indices$BTLI)
-      BNFI <- mean(fit_indices@indices$BNFI)
+      
       npar <- blavInspect(res1, "npar")
       marg_loglik <- blavInspect(res1, "test")[[1]]$stat
       ppp <- blavInspect(res1, "test")[[2]]$stat
@@ -195,20 +185,21 @@ fit_model_blav <- function(y0, N_timep){
       pd <- fit_indices@details$pD
       
       # store
-      modelfit <- c(npar, ppp, marg_loglik, BRMSEA, BGammaHat,
-                    adjBGammaHat, BMc, BCFI, BTLI, BNFI, chisq, pd)
+      modelfit <- c(npar, ppp, marg_loglik, 
+                    BRMSEA, BGammaHat, adjBGammaHat, BMc, 
+                    BCFI_0C, BTLI_0C, BNFI_0C, 
+                    BCFI_0A, BTLI_0A, BNFI_0A, 
+                    chisq, pd)
       fitresults <- matrix(modelfit, nrow = 1)
       colnames(fitresults) <- fitnom_blavaan
       
       return(fitresults)
     }
     else { # if model did not converge: save NAs so that simulation doesnt get broken
-      print("noconvergence")
       return(rep(NA, length(fitnom_blavaan)))
     }
   } 
   else { # if there is a try-error: save NAs so that simulation doesnt get broken
-    print("tryerror")
     return(rep(NA, length(fitnom_blavaan)))
   }
 } 
@@ -237,7 +228,6 @@ fit_model_stan <- function(ydat, ydat2, timepoints, person_size){
     return(fitresults1)
   } 
   else { # if there is a try-error: save NAs so that simulation doesnt get broken
-    print("tryerror")
     rep(NA, length(fitnom_stan))
   }
 } 
@@ -307,9 +297,8 @@ for (N_pers in Person_size) {
           
           # Initialize empty matrix to store fit indices
           fitm_lavaan <- matrix(NA, N_sim_samples, length(fitnom_lavaan))
-          fitm_lavaan_true <- matrix(NA, N_sim_samples, length(fitnom_lavaan))
           fitm_blavaan <- matrix(NA, N_sim_samples, length(fitnom_blavaan))
-          fitm_stan <- matrix(NA, N_sim_samples, length(fitnom_stan))
+          #fitm_stan <- matrix(NA, N_sim_samples, length(fitnom_stan))
           
           
           # Loop over samples
@@ -324,11 +313,10 @@ for (N_pers in Person_size) {
               y0 <- temp_dat[["y0"]]
               print("Fit model and store results: lavaan")
               fitm_lavaan[Index_sample, ] <- fit_model_lav(ydat2, N_timep) # Fit model and store results
-              fitm_lavaan_true[Index_sample, ] <- fit_model_lav_true(ydat2, N_timep, Type_misfit) # Fit true model and store results (for plotting)
               print("Fit model and store results: blavaan")
               fitm_blavaan[Index_sample, ] <- fit_model_blav(ydat2, N_timep) # Fit model and store results
-              print("Fit model and store results: stan")
-              fitm_stan[Index_sample, ] <- as.numeric(fit_model_stan(ydat, ydat2, N_timep, N_pers)) # Fit model and store results
+              #print("Fit model and store results: stan")
+              #fitm_stan[Index_sample, ] <- as.numeric(fit_model_stan(ydat, ydat2, N_timep, N_pers)) # Fit model and store results
               
             }
           }
@@ -337,9 +325,8 @@ for (N_pers in Person_size) {
           cat('Ran misfit_type:', Type_misfit, ' misfit_size:', Size_misfit, ' for', N_sim_samples, 'indep samples', '\n')
           # Save results
           colnames(fitm_lavaan) <- fitnom_lavaan
-          colnames(fitm_lavaan_true) <- fitnom_lavaan
           colnames(fitm_blavaan) <- fitnom_blavaan
-          colnames(fitm_stan) <- fitnom_stan
+          #colnames(fitm_stan) <- fitnom_stan
           
           
           # Move up one directory level to dsem_modelfit
@@ -360,18 +347,14 @@ for (N_pers in Person_size) {
             if (!exists("lavaan_simulation_results_df")) {
               lavaan_simulation_results_df <- data.frame()
             }
-            
-            if (!exists("lavaan_true_simulation_results_df")) {
-              lavaan_true_simulation_results_df <- data.frame()
-            }
-            
+
             if (!exists("blavaan_simulation_results_df")) {
               blavaan_simulation_results_df <- data.frame()
             }
             
-            if (!exists("stan_simulation_results_df")) {
-              stan_simulation_results_df <- data.frame()
-            }
+            #if (!exists("stan_simulation_results_df")) {
+            #  stan_simulation_results_df <- data.frame()
+            #}
             
             
             # Add the current `fitm_lavaan` as a new row (ensure it can be coerced into a dataframe)
@@ -381,51 +364,40 @@ for (N_pers in Person_size) {
               fitm_lavaan_row <- as.data.frame(fitm_lavaan)
             }
             
-            if (is.data.frame(fitm_lavaan_true)) {
-              fitm_lavaan_true_row <- fitm_lavaan_true
-            } else {
-              fitm_lavaan_true_row <- as.data.frame(fitm_lavaan_true)
-            }
-            
             if (is.data.frame(fitm_blavaan)) {
               fitm_blavaan_row <- fitm_blavaan
             } else {
               fitm_blavaan_row <- as.data.frame(fitm_blavaan)
             }
             
-            if (is.data.frame(fitm_stan)) {
-              fitm_stan_row <- (fitm_stan)
-            } else {
-              fitm_stan_row <- as.data.frame((fitm_stan))
-            }
+            #if (is.data.frame(fitm_stan)) {
+            #  fitm_stan_row <- (fitm_stan)
+            #} else {
+            #  fitm_stan_row <- as.data.frame((fitm_stan))
+            #}
             
             # Optionally add simulation metadata (e.g., Exp_name_info) to the row
             fitm_lavaan_row$Exp_name_info <- Exp_name_info
-            fitm_lavaan_true_row$Exp_name_info <- Exp_name_info
             fitm_blavaan_row$Exp_name_info <- Exp_name_info
-            fitm_stan_row$Exp_name_info <- Exp_name_info
+            #fitm_stan_row$Exp_name_info <- Exp_name_info
             
             # Append the row to the dataframe
             lavaan_simulation_results_df <- rbind(lavaan_simulation_results_df, fitm_lavaan_row)
-            lavaan_true_simulation_results_df <- rbind(lavaan_true_simulation_results_df, fitm_lavaan_true_row)
             blavaan_simulation_results_df <- rbind(blavaan_simulation_results_df, fitm_blavaan_row)
-            stan_simulation_results_df <- rbind(stan_simulation_results_df, fitm_stan_row)
+            #stan_simulation_results_df <- rbind(stan_simulation_results_df, fitm_stan_row)
             
           }else if(save_as == 'RDS'){
             # Save your RDS file in the desired directory with EXP_NAME in the filename
             saveRDS(fitm_lavaan, file = file.path(save_dir, paste0("lavaan_", Exp_name_info,"_time_",Exp_time, ".RDS")))
-            saveRDS(fitm_lavaan_true, file = file.path(save_dir, paste0("lavaan_true_", Exp_name_info,"_time_",Exp_time, ".RDS")))
             saveRDS(fitm_blavaan, file = file.path(save_dir, paste0("blavaan_", Exp_name_info,"_time_",Exp_time, ".RDS")))
-            saveRDS(fitm_stan, file = file.path(save_dir, paste0("stan_", Exp_name_info,"_time_",Exp_time, ".RDS")))
+            #saveRDS(fitm_stan, file = file.path(save_dir, paste0("stan_", Exp_name_info,"_time_",Exp_time, ".RDS")))
           }else if(save_as == 'csv'){
             csv_path_lavaan <- file.path(save_dir, paste0("lavaan_", Exp_name_info, ".csv"))
             write.csv(fitm_lavaan, file = csv_path_lavaan, row.names = FALSE) 
-            csv_path_lavaan_true <- file.path(save_dir, paste0("lavaan_true_", Exp_name_info, ".csv"))
-            write.csv(fitm_lavaan_true, file = csv_path_lavaan_true, row.names = FALSE) 
             csv_path_blavaan <- file.path(save_dir, paste0("blavaan_", Exp_name_info, ".csv"))
             write.csv(fitm_blavaan, file = csv_path_blavaan, row.names = FALSE)
-            csv_path_stan <- file.path(save_dir, paste0("stan_", Exp_name_info, ".csv"))
-            write.csv(fitm_stan, file = csv_path_stan, row.names = FALSE)
+            #csv_path_stan <- file.path(save_dir, paste0("stan_", Exp_name_info, ".csv"))
+            #write.csv(fitm_stan, file = csv_path_stan, row.names = FALSE)
           }else{
             cat("Format of type", save_as, " cannot be saved.")
           }
