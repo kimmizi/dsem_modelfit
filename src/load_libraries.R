@@ -2,7 +2,7 @@
 load_libraries <- function() {
   # List of required libraries
   required_packages <- c(
-    "doParallel", "foreach", "doSNOW", "future", "profvis", "Rmpi",
+    "doParallel", "foreach", "doSNOW", "future", "profvis", "furrr",
     "mvtnorm", "matrixcalc", "lavaan", "blavaan", "rstan"
   )
   
