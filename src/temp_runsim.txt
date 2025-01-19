@@ -39,7 +39,7 @@ current_dir <- tryCatch({
 })
 
 print(current_dir)
-#current_dir = "C:/Users/mihai/Documents/Faculta/Research Project/dsem_modelfit/src"
+current_dir = "C:/Users/mihai/Documents/Faculta/Research Project/dsem_modelfit/src"
 
 # Automatically load all libraries only once ###################################
 source(file.path(current_dir,  "load_libraries.R"))
@@ -144,14 +144,14 @@ workloads <- list(
 # Get simulation number from command line arguments
 
 #TODO: uncomment reading bash args
-args <- commandArgs(trailingOnly = TRUE)
-if (length(args) != 1) {
-  stop("Usage: Rscript run_simulation.R <simulation_number>")
-}
-sim_num <- as.numeric(args[1])
+# args <- commandArgs(trailingOnly = TRUE)
+# if (length(args) != 1) {
+#   stop("Usage: Rscript run_simulation.R <simulation_number>")
+# }
+# sim_num <- as.numeric(args[1])
 
 # TODO: comment out following row
-#sim_num = 5
+sim_num = 5
 
 
 
@@ -546,19 +546,12 @@ run_sim <- function(Timepoints, Person_size, core) {
 library(future)
 library(furrr)
 
-
-N_t <- current_sim$combinations$timepoint
-N_p <- current_sim$combinations$person_size
-
 # Set up parallel plan
 plan(multisession, workers = parallel::detectCores())
 
 results <- future_map_dfr(seq_along(N_t), function(i) {
   run_sim(N_t[i], N_p[i], i)
 })
-
-write.csv(results, file = "simulation_results.csv", row.names = FALSE)
-saveRDS(results, file = "simulation_results.RDS")
 
 # old parallelisation script
 # 
