@@ -6,6 +6,8 @@
 # 3. For each seed, we have a new gendata, new sim
 # 4. Somehow saves each run in a separate file
 
+debugging_mode = "Server"  #"LOCAL" 
+
 # 1.1. Packages and file dependencies #######################################################################
 
 # all required packages should be here and initialised only once at the start
@@ -20,27 +22,37 @@ options(mc.cores = parallel::detectCores())
 
 # 1.2. DSEM models ###########################################################################################
 
-# find cluster working directory
-current_dir <- tryCatch({
-  args <- commandArgs(trailingOnly = FALSE)
-  file_flag <- "--file="
-  script_path <- NULL
-  
-  for (arg in args) {
-    if (startsWith(arg, file_flag)) {
-      script_path <- sub(file_flag, "", arg)
-      break
+if(debugging_mode != "LOCAL"){
+  # ONLY FOR CLUSTER USE
+  # find cluster working directory
+  current_dir <- tryCatch({
+    args <- commandArgs(trailingOnly = FALSE)
+    file_flag <- "--file="
+    script_path <- NULL
+    
+    for (arg in args) {
+      if (startsWith(arg, file_flag)) {
+        script_path <- sub(file_flag, "", arg)
+        break
+      }
     }
-  }
+    
+    if (!is.null(script_path)) {
+      dirname(normalizePath(script_path))
+    } else {
+      stop("Could not determine script path")
+    }
+  }, error = function(e) {
+    getwd()  # Fallback to working directory
+  })
   
-  if (!is.null(script_path)) {
-    dirname(normalizePath(script_path))
-  } else {
-    stop("Could not determine script path")
-  }
-}, error = function(e) {
-  getwd()  # Fallback to working directory
-})
+}else{
+  # ONLY FOR LOCAL USE
+  current_dir = "C:/Users/mihai/Documents/Faculta/Research Project/dsem_modelfit/src"
+  
+}
+
+
 # We try to read in all required model files
 source(file.path(current_dir,  "lavaan_dsem_models_randomintercept.R"))
 source(file.path(current_dir,  "lavaan_dsem_models_randomintercept_tt.R"))
@@ -124,6 +136,14 @@ workloads <- list(
       timepoint = c(5, 4, 2, 10, 3, 2, 1, 1),
       person_size = c(1501, 1501, 2001, 181, 211, 211, 151, 91)
     )
+  ),
+  # this last one is a testing one
+  sim_11 = list(
+    total_workload = 20618,
+    combinations = data.frame(
+      timepoint = c(1, 2),
+      person_size = c(31, 91)
+    )
   )
 )
 
@@ -143,7 +163,224 @@ initialize_ly1 <- function(Type_misfit, Size_misfit) {
   }
 }
 
-# Function to initialize simulation specific data set
+#### A first function generating data using within-time points cross-loadings ####
+# Inputs:
+# N: number of persons
+# Nt: number of timepoints
+# phi0: covariance matrix for latent factors
+# mu0: mean vector for latent factors
+# ar0: autoregressive coefficients vector
+# ly0: factor loadings (for current time)
+# ly1: factor loadings (for cross-loadings) ### WHAT IS DIFFERENCE BETWEEN LY0 AND LY1?
+# td: residual variance
+
+# Output:
+# a list containing
+# is_positive_def: Is cov positive-definite? TRUE / FALSE
+# y: observed data over time and individuals
+# y0: reshaped data frame
+# x_cov: covariance matrix of y0
+# x_mean: mean vector of y0
+
+gendata01 <- function(N, Nt, phi0, mu0, ar0, ly0, ly1, td){
+  
+  # random intercept with var = .3, so icc = .3
+  # scale covariance matrix
+  covu0 <- phi0*.3
+  
+  # sample latent factors from multivariate normal distribution
+  eta2 <- rmvnorm(N, mu0, covu0) # RANDOM INTERCEPT VALUES?
+  
+  # initialize empty matrices for 2 latent variables (eta) and 6 observed variables (y)
+  eta <- array(NA, c(Nt, N, 2))
+  y   <- array(NA, c(Nt, N, 6))
+  
+  # update residual variance for standardized items
+  # adjust the fourth element of matrix
+  td[4,4] <- 1 - (ly0[4, 2]^2 + ly1[4, 1]^2 + 2*ly0[4, 2]*ly1[4, 1]*phi0[2, 1])
+  
+  # latent variables
+  # time point 1
+  eta[1, , ] <- eta2 + rmvnorm(N, mu0, phi0 - covu0)
+  
+  # observed variables
+  y[1, , ] <- eta[1, , ]%*%t(ly0 + ly1) + rmvnorm(N, sigma = td) # FACTOR MODEL, ly1 is a missspecification lambda 
+  #cov(eta[1,,])
+  
+  # loop through remaining time points
+  if(Nt > 1){
+    for(j in 2:Nt){
+      # sample zeta, residuals for latent variables
+      zeta <- rmvnorm(N, c(0, 0), (phi0)*(1 - ar0^2) - covu0) # this is a residual with var (1-phi^2) sp tjat var(eta)==1
+      
+      # update the two latent variables
+      # adds the autoregressive effect (ar0) of the previous time point and residual
+      eta[j, , 1] <- eta2[, 1] + ar0[1]*(eta[j - 1, , 1] - eta2[, 1]) + zeta[, 1] # eta2[,1] INTERCEPT
+      eta[j, , 2] <- eta2[, 2] + ar0[2]*(eta[j - 1, , 2] - eta2[, 2]) + zeta[, 2]
+      
+      # generate observed data
+      # this does NOT include cross-time effects
+      y[j, , ] <- eta[j, , ]%*%t(ly0 + ly1) + rmvnorm(N, sigma = td) # ARRAY 3D, IN VERSION 04 WE ADD THE CROSSTIME ADDITIONALLY 
+    }
+  }
+  # NO NEED TO ADJUST
+  #cov(eta[Nt,,]) # check points, is cov what I want it to be? 0.3
+  #diag(cov(y[Nt,,]))
+  #apply(y[Nt,,],2,mean)
+  
+  # initialize empty matrix with N rows (individuals) and 6*Nt columns (6 observed variables over all time points)
+  y0 <- matrix(NA, N, 6*Nt)
+  
+  for(i in 1:N){
+    for(j in 1:Nt){
+      y0[i, (j - 1)*6 + 1:6] <- y[j, i, ]  
+    }
+  }
+  
+  # convert observed data y into data frame
+  y0 <- data.frame(y0)
+  
+  # add columns names
+  cnom <- paste0("y", 1:6, "t", 1)
+  if(Nt > 1){
+    for(j in 2:Nt){
+      cnom <- c(cnom, paste0("y", 1:6, "t", j))
+    }
+  }
+  colnames(y0) <- cnom
+  
+  # Compute covariance
+  x_cov  <- cov(y0)
+  
+  # Compute mean
+  x_mean <- apply(y0, 2, mean)
+  
+  # Check if cov is positive-definite
+  is_positive_def <- is.positive.definite(x_cov) 
+  
+  # Output depending on whether cov is pos.-def.
+  if(is_positive_def==T){
+    out <- list(is_positive_def,y,y0,x_cov,x_mean)
+    names(out) <- c("is_positive_def", "y", "y0", "x_cov", "x_mean")
+  }else{
+    out <- list(is_positive_def)
+    names(out) <- "is_positive_def"
+  }
+  out
+}
+
+#### Second function generating data using between-time points cross-loadings ####
+
+# Inputs:
+# N: number of persons
+# Nt: number of timepoints
+# phi0: covariance matrix for latent factors
+# mu0: mean vector for latent factors
+# ar0: autoregressive coefficients vector
+# ly0: factor loadings (for current time)
+# ly1: factor loadings (for cross-loadings) ### WHAT IS DIFFERENCE BETWEEN LY0 AND LY1?
+# td: residual variance
+
+# Output:
+# a list containing
+# is_positive_def: Is cov positive-definite? TRUE / FALSE
+# y: observed data over time and individuals
+# y0: reshaped data frame
+# x_cov: covariance matrix of y0
+# x_mean: mean vector of y0
+
+gendata02 <- function(N, Nt, phi0, mu0, ar0, ly0, ly1, td){
+  
+  # scale covariance matrix
+  covu0 <- phi0*.3
+  
+  # sample latent factors from multivariate normal distribution
+  eta2 <- rmvnorm(N, mu0, covu0)
+  
+  # initialize empty matrices for 2 latent variables (eta) and 6 observed variables (y)
+  eta <- array(NA, c(Nt, N, 2))
+  y <- array(NA, c(Nt, N, 6))
+  
+  ### WHAT DOES THIS DO EXACTLY?
+  # update residual variance for standardized items
+  tdtt1 <- td
+  # adjust the first element of matrix 
+  tdtt1[1,1] <- 1 - (ly0[1, 1]^2 + ly1[1, 1]^2 + 2*ly0[1, 1]*ly1[1, 1]*ar0[1])
+  
+  # latent variables
+  # time point 1
+  eta[1,,] <- eta2 + rmvnorm(N, mu0, phi0 - covu0)
+  #cov(eta[,1,]) # check cov
+  # NOTE: the total variance of the latent factors is currently not 1
+  
+  # observed variables
+  y[1,,] <- eta[1,,]%*%t(ly0) + rmvnorm(N, sigma = td)
+  #cov(y[1,,])
+  #apply(y[1,,],2,mean)
+  
+  # loop through remaining time points
+  if(Nt > 1){
+    for(j in 2:Nt){
+      # sample zeta, residuals for latent variables
+      zeta <- rmvnorm(N, c(0, 0), (phi0)*(1 - ar0^2) - covu0) # this is a residual with var (1 - phi^2) so that var(eta)==1
+      
+      # update the two latent variables
+      # adds the autoregressive effect (ar0) of the previous time point and residual
+      eta[j, , 1] <- eta2[,1] + ar0[1]*(eta[j - 1, , 1] - eta2[,1]) + zeta[,1]
+      eta[j, , 2] <- eta2[,2] + ar0[2]*(eta[j - 1, , 2] - eta2[,2]) + zeta[,2]
+      
+      # generate observed data
+      # this includes cross-time effects
+      y[j, , ] <- eta[j, , ]%*%t(ly0) + eta[j - 1, , ]%*%t(ly1) + rmvnorm(N, sigma = tdtt1)
+    }
+  }
+  #diag(cov(y[Nt,,]))
+  #apply(y[Nt,,],2,mean)
+  
+  
+  # initialize empty matrix with N rows (individuals) and 6*Nt columns (6 observed variables over all time points)
+  y0 <- matrix(NA, N, 6*Nt)
+  
+  for(i in 1:N){ 
+    for(j in 1:Nt){ 
+      y0[i, (j - 1)*6 + 1:6] <- y[j, i, ]  
+    }
+  }
+  
+  # convert observed data y into data frame
+  y0 <- data.frame(y0)
+  
+  # add columns names
+  cnom <- paste0("y", 1:6, "t", 1)
+  if(Nt > 1){
+    for(j in 2:Nt){
+      cnom <- c(cnom, paste0("y", 1:6, "t", j))
+    }
+  }
+  colnames(y0) <- cnom
+  
+  # Compute covariance
+  x_cov <- cov(y0)
+  
+  # Compute mean
+  x_mean <- apply(y0, 2, mean)
+  
+  # Check if cov is positive-definite
+  is_positive_def <- is.positive.definite(x_cov)
+  
+  # Output depending on whether cov is pos.-def.
+  if(is_positive_def == T){
+    out <- list(is_positive_def, y, y0, x_cov, x_mean)
+    names(out) <- c("is_positive_def", "y", "y0", "x_cov", "x_mean")
+  }else{
+    out <- list(is_positive_def)
+    names(out) <- "is_positive_def"
+  }
+  out
+}
+
+
+# Wrapper function for the previous two to initialize simulation specific data set
 generate_temp_data <- function(Type_crossloading, N_pers, N_timep, phi0, mu0, ar0, ly0, ly1, td) {
   if (Type_crossloading == "tt") {
     return(gendata01(N_pers, N_timep, phi0, mu0, ar0, ly0, ly1, td))
@@ -168,13 +405,16 @@ fit_model_lav <- function(y0, N_timep){
   if(!inherits(res1, "try-error")){ 
     # if model converged: save fit indices
     if(res1@optim$converged == T){ 
+      cat("Lav model with ", N_timep, "did not converge.")
       fitmeasures(res1)  
     }
     else { # if model did not converge: save NAs so that simulation doesnt get broken
+      cat("Lav model with ", N_timep, "did not converge.")
       return(rep(NA, length(fitnom_lavaan)))
     }
   } 
   else { # if there is a try-error: save NAs so that simulation doesnt get broken
+    cat("Lav model NAs due to try error for timep:", N_timep)
     return(rep(NA, length(fitnom_lavaan)))
   }
 }
@@ -245,15 +485,15 @@ fit_model_blav <- function(y0, N_timep){
         
         return(fitresults)
       }, error = function(e) {
-        cat("Error in fit indices calculation:", conditionMessage(e), "\n")
+        cat("Blav Error in fit indices calculation:", conditionMessage(e), "\n")
         return(rep(NA, length(fitnom_blavaan)))
       })
     } else {
-      cat("Model did not converge\n")
+      cat("Blav Model did not converge\n")
       return(rep(NA, length(fitnom_blavaan)))
     }
   } else {
-    cat("Model fitting failed\n")
+    cat("Blav Model fitting failed\n")
     return(rep(NA, length(fitnom_blavaan)))
   }
 }
@@ -288,12 +528,18 @@ fit_model_stan <- function(ydat, ydat2, timepoints, person_size){
 
 # 2.1. Read from slurm bash file: workload, specific seed from array, core? #######################################
 
-# Get simulation number from command line arguments
-args <- commandArgs(trailingOnly = TRUE)
-if (length(args) != 1) {
-  stop("Usage: Rscript run_simulation.R <simulation_number>")
+if(debugging_mode != "LOCAL"){
+  #ONLY FOR CLUSTER USAGE
+  # Get simulation number from command line arguments
+  args <- commandArgs(trailingOnly = TRUE)
+  if (length(args) != 1) {
+    stop("Usage: Rscript run_par_new.R <simulation_number>")
+  }
+  sim_num <- as.numeric(args[1])
+}else{
+  # ONLY FOR LOCAL USAGE
+  sim_num = 11 #always use 11 as a test condition
 }
-sim_num <- as.numeric(args[1]) # = 5
 
 # Get current simulation workload
 current_sim <- workloads[[paste0("sim_", sim_num)]]
@@ -304,27 +550,29 @@ if (is.null(current_sim)) {
 
 # 2.2. Test and make sure slurm unique_id and worloads are working ################################################
 
-# print rslurm_id
-rslurm_id <- as.numeric(Sys.getenv('SLURM_ARRAY_TASK_ID')) 
-#rslurm_id<-1
+if(debugging_mode != "LOCAL"){
+  # ONLY FOR CLUSTER USAGE
+  # print rslurm_id
+  rslurm_id <- as.numeric(Sys.getenv('SLURM_ARRAY_TASK_ID')) 
+}else{
+  #ONLY FOR LOCAL USAGE
+  rslurm_id<-1
+}
+
+
 cat('rslurm_id=', rslurm_id, '\n')
 
 # Workload id
 cat("Workload_id =", sim_num, '\n')
 
-# current_sim 
-cat('current_sim=', current_sim, '\n')
-
 # Workload specific conditions
 N_t <- current_sim$combinations$timepoint
 N_p <- current_sim$combinations$person_size
-cat("Workload N_p:", N_p, "\n", "Workload N_t:", N_t)
+cat("Workload N_p:", N_p, "\n")
+cat("Workload N_t:", N_t, "\n")
 
 
 # 3.0 Global vars ##############################################################################################
-
-Conditions_P <- c(91,121, 151, 181,211,501,1001,1501,2001)
-Conditions_T <- c(1:5, 10, 15)
 
 # Setting all hyperparameters excluding N_t and N_p 
 # Save as filetype (one of local, RDS, csv)
@@ -363,51 +611,106 @@ fitnom_stan <- c("BRMSEA", "BGammahat", "adjBGammahat",
                  "BMc", "pd_1", "p_1", "loglik", "logliksat_1", "chisq")
 
 # 3.0.1 Simulation loop ###########################################################################################
-for (i_pers in seq_along(Person_size)) {
-  for (i_timep in seq_along(Timepoints)) {
+for (i_pers in seq_along(N_p)) {
+  for (i_timep in seq_along(N_t)) {
     
-    n_p <- Person_size[i_pers] #small n_p because local variable (inside function)
-    n_t<- Timepoints[i_timep]
+    n_p <- N_p[i_pers] #small n_p because local variable (inside function)
+    n_t<- N_t[i_timep]
     
     # if condition: match pos i of N_pers to pos i of N_timep. This is needed for workloads
     if(i_pers == i_timep){
-      print(paste("Matching position:", i_pers, "-> N_pers:", n_p, "N_timep:", n_t))
+      print(paste("Matching position:", i_pers, "-> N_p:", n_p, "N_t:", n_t))
       
+      
+      #print(N_sim_samples)
       for(idk in N_sim_samples){
         
         idk <- rslurm_id
-        name_local_SIMULATE_Info <- paste0("results_dfg/results_N",as.character(person_size),"_cluster",as.character(i))
         
-        #####################################################################
-        #set core specific seed at the start of each gendata
-        set.seed(24032024+idk+N_pers)
-        
-        rnorm(5)
-        
+        # Check theoretical specification requirement
+        if (n_t * 6 >= n_p) next
+        for (Type_misfit in Type_crossloading) {
+          # Picking conditions. Since we are not interested in power, we just want
+          # to fit 1 model with no misfit & type none, and then foreach misfit type
+          # 1 with misfit size = 0.3, one 0.6.
+          for (Size_misfit in Size_crossloading) {
+            # if type tt or tt1, dont run size=0, else run
+            if(Size_misfit == 0 && Type_misfit != "none"){
+              #cat('skipped over misfit type:', Type_misfit, " and size:", Size_misfit, "\n")
+            }else if(Size_misfit != 0 && Type_misfit == "none"){
+              #cat('skipped over misfit type:', Type_misfit, " and size:", Size_misfit, "\n")
+            }else{ 
+              
+              # Initialize factor loadings for the current condition
+              ly1 <- initialize_ly1(Type_misfit, Size_misfit)
+
+              # Initialize empty matrix to store fit indices
+              fitm_lavaan <- matrix(NA, N_sim_samples, length(fitnom_lavaan))
+              fitm_blavaan <- matrix(NA, N_sim_samples, length(fitnom_blavaan))
+              #fitm_stan <- matrix(NA, 1, length(fitnom_stan))
+              
+              #set core specific seed right before gendata
+              set.seed(24032024+idk+n_p)
+              temp_dat <- generate_temp_data(Type_misfit, n_p, n_t, phi0, mu0, ar0, ly0, ly1, td)
+              ydat <- temp_dat$y # use array version of data for stan
+              ydat2 <- temp_dat$y0 # use the transformed version in the getfit function
+              
+              # Check if data is positive definite and fit models
+              if (temp_dat[["is_positive_def"]]) {
+                y0 <- temp_dat[["y0"]]
+                
+                # Lavaan
+                fitm_lavaan[1, ] <- fit_model_lav(ydat2, n_t) # Fit model and store results
+                
+                # Blavaan
+                fitm_blavaan[1, ] <- fit_model_blav(ydat2, n_t) # Fit model and store results
+                
+                # Stan
+                #fitm_stan[1, ] <- as.numeric(fit_model_stan(ydat, ydat2, n_t, n_p)) # Fit model and store results
+              } # end if pos definite, fit models
+            } # end if selecting 5 model conditions from 9 possible
+          } #end loop over misfit size
+        } #end loop over misfit type
+      } #end loop over number of simulations per slurm worker 
           
-      }
-      # test if sim parallelisation works
+      # for each misfit type and misfit size
+
+      # 4.1. After each parallelisation run, save file ###################################################################
       
-      # 3.1. For each unique_id: new gendata ###########################################################################
-      #TODO
-      # for each dataset (tt, tt1/none) reinit the seed
-      
-      # 3.2. For each unique_id: num_sim: 25, 250 respectively
-      #TODO
-      
-      # 3.3. For each unique_id: run sim and make sure it is correctly parallelised 
-      #TODO
-      
-      # 4.1. In each parallelisation run, save file ####################################################################
-      #TODO
-      # Find correct folder
-      
-      #with specific seed, N, Nt, lav/blav, tt_type, tt_size,   
+      # Colnames?
+      colnames(fitm_lavaan) <- fitnom_lavaan
+      colnames(fitm_blavaan) <- fitnom_blavaan
+      # #colnames(fitm_stan) <- fitnom_stan
+      # Move up one directory level to dsem_modelfit
+      parent_dir <- dirname(current_dir)
+      # Define the experiment name
+      Exp_day <- format(Sys.time(), "%Y-%m-%d") # Format: YYYY-MM-DD_HH-MM-SS
+      # Specify the save directory in dsem_modelfit/exp
+      save_dir <- file.path(parent_dir, "exp", Exp_day)
+      # Create the day directory if it does not exist
       # TODO
+      if (!dir.exists(save_dir)) {
+        dir.create(save_dir, recursive = TRUE)
+      }
+      
+      # test
+      #exp_name <- paste("test", n_p, n_t, idk, "lav_blav", ".csv", sep='_')
+      # csv_path_test <- file.path(save_dir, exp_name)
+      # write.csv(random_numbers, file=csv_path_test, row.names = FALSE)
+      
+      # actual
+      exp_name_lav <- paste("dsem", n_p, n_t, idk, "lav", ".csv", sep='_')
+      exp_name_blav <- paste("dsem", n_p, n_t, idk, "blav", ".csv", sep='_')
+      
+      csv_path_lavaan <- file.path(save_dir, exp_name_lav)
+      write.csv(fitm_lavaan, file = csv_path_lavaan, row.names = FALSE)
+      csv_path_blavaan <- file.path(save_dir, exp_name_blav)
+      write.csv(fitm_blavaan, file = csv_path_blavaan, row.names = FALSE)
       
     } #end condition for correct workload spec. Sligt redundancy, but O(1)
   } #end loop over N_t
 } #end loop over N_p
 
+cat("finished worker number ", rslurm_id, "from Workload", sim_num)
 
 

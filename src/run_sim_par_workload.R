@@ -470,67 +470,67 @@ run_sim <- function(Timepoints, Person_size, core) {
                 dir.create(save_dir, recursive = TRUE)
               }
               
-              # # Save model with time, core, condition to have tractability
-              # if(save_as == 'local'){
-              #   # Initialize an empty dataframe to store results across runs
-              #   if (!exists("lavaan_simulation_results_df")) {
-              #     lavaan_simulation_results_df <- data.frame()
-              #   }
-              #   
-              #   if (!exists("blavaan_simulation_results_df")) {
-              #     blavaan_simulation_results_df <- data.frame()
-              #   }
-              #   
-              #   #if (!exists("stan_simulation_results_df")) {
-              #   #  stan_simulation_results_df <- data.frame()
-              #   #}
-              #   
-              #   
-              #   # Add the current fitm_lavaan as a new row (ensure it can be coerced into a dataframe)
-              #   if (is.data.frame(fitm_lavaan)) {
-              #     fitm_lavaan_row <- fitm_lavaan
-              #   } else {
-              #     fitm_lavaan_row <- as.data.frame(fitm_lavaan)
-              #   }
-              #   
-              #   if (is.data.frame(fitm_blavaan)) {
-              #     fitm_blavaan_row <- fitm_blavaan
-              #   } else {
-              #     fitm_blavaan_row <- as.data.frame(fitm_blavaan)
-              #   }
-              #   
-              #   #if (is.data.frame(fitm_stan)) {
-              #   #  fitm_stan_row <- (fitm_stan)
-              #   #} else {
-              #   #  fitm_stan_row <- as.data.frame((fitm_stan))
-              #   #}
-              #   
-              #   # Optionally add simulation metadata (e.g., Exp_name_info) to the row
-              #   fitm_lavaan_row$Exp_name_info <- Exp_name_info
-              #   fitm_blavaan_row$Exp_name_info <- Exp_name_info
-              #   #fitm_stan_row$Exp_name_info <- Exp_name_info
-              #   
-              #   # Append the row to the dataframe
-              #   lavaan_simulation_results_df <- rbind(lavaan_simulation_results_df, fitm_lavaan_row)
-              #   blavaan_simulation_results_df <- rbind(blavaan_simulation_results_df, fitm_blavaan_row)
-              #   #stan_simulation_results_df <- rbind(stan_simulation_results_df, fitm_stan_row)
-              #   
-              # }else if(save_as == 'RDS'){
-              #   # Save your RDS file in the desired directory with EXP_NAME in the filename
-              #   saveRDS(fitm_lavaan, file = file.path(save_dir, paste0("lavaan_", Exp_name_info,"_time_",Exp_time, ".RDS")))
-              #   saveRDS(fitm_blavaan, file = file.path(save_dir, paste0("blavaan_", Exp_name_info,"_time_",Exp_time, ".RDS")))
-              #   #saveRDS(fitm_stan, file = file.path(save_dir, paste0("stan_", Exp_name_info,"_time_",Exp_time, ".RDS")))
-              # }else if(save_as == 'csv'){
-              #   csv_path_lavaan <- file.path(save_dir, paste0("lavaan_", Exp_name_info, "_worker_", worker_id, ".csv"))
-              #   write.csv(fitm_lavaan, file = csv_path_lavaan, row.names = FALSE)
-              #   csv_path_blavaan <- file.path(save_dir, paste0("blavaan_", Exp_name_info,"_worker_", worker_id, ".csv"))
-              #   write.csv(fitm_blavaan, file = csv_path_blavaan, row.names = FALSE)
-              #   #csv_path_stan <- file.path(save_dir, paste0("stan_", Exp_name_info,"_worker_", worker_id, ".csv"))
-              #   #write.csv(fitm_stan, file = csv_path_stan, row.names = FALSE)
-              # }else{
-              #   cat("Format of type", save_as, " cannot be saved.")
-              #   stop("Wrong file format argument")
-              # }
+              # Save model with time, core, condition to have tractability
+              if(save_as == 'local'){
+                # Initialize an empty dataframe to store results across runs
+                if (!exists("lavaan_simulation_results_df")) {
+                  lavaan_simulation_results_df <- data.frame()
+                }
+
+                if (!exists("blavaan_simulation_results_df")) {
+                  blavaan_simulation_results_df <- data.frame()
+                }
+
+                #if (!exists("stan_simulation_results_df")) {
+                #  stan_simulation_results_df <- data.frame()
+                #}
+
+
+                # Add the current fitm_lavaan as a new row (ensure it can be coerced into a dataframe)
+                if (is.data.frame(fitm_lavaan)) {
+                  fitm_lavaan_row <- fitm_lavaan
+                } else {
+                  fitm_lavaan_row <- as.data.frame(fitm_lavaan)
+                }
+
+                if (is.data.frame(fitm_blavaan)) {
+                  fitm_blavaan_row <- fitm_blavaan
+                } else {
+                  fitm_blavaan_row <- as.data.frame(fitm_blavaan)
+                }
+
+                #if (is.data.frame(fitm_stan)) {
+                #  fitm_stan_row <- (fitm_stan)
+                #} else {
+                #  fitm_stan_row <- as.data.frame((fitm_stan))
+                #}
+
+                # Optionally add simulation metadata (e.g., Exp_name_info) to the row
+                fitm_lavaan_row$Exp_name_info <- Exp_name_info
+                fitm_blavaan_row$Exp_name_info <- Exp_name_info
+                #fitm_stan_row$Exp_name_info <- Exp_name_info
+
+                # Append the row to the dataframe
+                lavaan_simulation_results_df <- rbind(lavaan_simulation_results_df, fitm_lavaan_row)
+                blavaan_simulation_results_df <- rbind(blavaan_simulation_results_df, fitm_blavaan_row)
+                #stan_simulation_results_df <- rbind(stan_simulation_results_df, fitm_stan_row)
+
+              }else if(save_as == 'RDS'){
+                # Save your RDS file in the desired directory with EXP_NAME in the filename
+                saveRDS(fitm_lavaan, file = file.path(save_dir, paste0("lavaan_", Exp_name_info,"_time_",Exp_time, ".RDS")))
+                saveRDS(fitm_blavaan, file = file.path(save_dir, paste0("blavaan_", Exp_name_info,"_time_",Exp_time, ".RDS")))
+                #saveRDS(fitm_stan, file = file.path(save_dir, paste0("stan_", Exp_name_info,"_time_",Exp_time, ".RDS")))
+              }else if(save_as == 'csv'){
+                csv_path_lavaan <- file.path(save_dir, paste0("lavaan_", Exp_name_info, "_worker_", worker_id, ".csv"))
+                write.csv(fitm_lavaan, file = csv_path_lavaan, row.names = FALSE)
+                csv_path_blavaan <- file.path(save_dir, paste0("blavaan_", Exp_name_info,"_worker_", worker_id, ".csv"))
+                write.csv(fitm_blavaan, file = csv_path_blavaan, row.names = FALSE)
+                #csv_path_stan <- file.path(save_dir, paste0("stan_", Exp_name_info,"_worker_", worker_id, ".csv"))
+                #write.csv(fitm_stan, file = csv_path_stan, row.names = FALSE)
+              }else{
+                cat("Format of type", save_as, " cannot be saved.")
+                stop("Wrong file format argument")
+              }
               return(list(fitm_lavaan = fitm_lavaan, fitm_blavaan = fitm_blavaan))
             }
           }
