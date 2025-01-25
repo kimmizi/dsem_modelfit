@@ -6,13 +6,14 @@
 # 3. For each seed, we have a new gendata, new sim
 # 4. Somehow saves each run in a separate file
 
-debugging_mode = "Server"  #"LOCAL" 
+debugging_mode = "SERVER" #"LOCAL"
 
 # 1.1. Packages and file dependencies #######################################################################
 
 # all required packages should be here and initialised only once at the start
 library(mvtnorm)
 library(matrixcalc)
+library(lavaan)
 library(blavaan)
 library(rstan)
 # I think this is so that rstan and blavaan can operate efficiently. 
@@ -49,7 +50,7 @@ if(debugging_mode != "LOCAL"){
 }else{
   # ONLY FOR LOCAL USE
   current_dir = "C:/Users/mihai/Documents/Faculta/Research Project/dsem_modelfit/src"
-  
+  #current_dir = "/Users/kimzierahn/PycharmProjects/dsem_modelfit/src"
 }
 
 
@@ -137,7 +138,7 @@ workloads <- list(
       person_size = c(1501, 1501, 2001, 181, 211, 211, 151, 91)
     )
   ),
-  # this last one is a testing one
+  # this last one is a testing one. Notice that we expect the cond 1x31 to not fit, and 2x91 to fit.
   sim_11 = list(
     total_workload = 20618,
     combinations = data.frame(
@@ -398,63 +399,62 @@ generate_temp_data <- function(Type_crossloading, N_pers, N_timep, phi0, mu0, ar
 # Input: data y0
 # Output: model res1
 fit_model_lav <- function(y0, N_timep){ 
-  
+  # Try fitting the model
   res1 <- try(sem(dsem[[N_timep]], data = y0, std.lv = TRUE), silent = TRUE)
   
-  # if there is no try-error
-  if(!inherits(res1, "try-error")){ 
-    # if model converged: save fit indices
-    if(res1@optim$converged == T){ 
-      cat("Lav model with ", N_timep, "did not converge.")
-      fitmeasures(res1)  
+  # If no error occurred during the try
+  if (!inherits(res1, "try-error")) {
+    # Check if the model converged
+    if (res1@optim$converged) { 
+      cat("Lav model with", N_timep, "timepoint(s) converged.\n")
+      return(fitmeasures(res1))  # Return fit measures if converged
+    } else { 
+      # If model did not converge
+      cat("Lav model with", N_timep, "timepoint(s) did not converge.\n")
+      return(rep(NA, length(fitnom_lavaan)))  # Return NA to indicate non-convergence
     }
-    else { # if model did not converge: save NAs so that simulation doesnt get broken
-      cat("Lav model with ", N_timep, "did not converge.")
-      return(rep(NA, length(fitnom_lavaan)))
-    }
-  } 
-  else { # if there is a try-error: save NAs so that simulation doesnt get broken
-    cat("Lav model NAs due to try error for timep:", N_timep)
-    return(rep(NA, length(fitnom_lavaan)))
+  } else { 
+    # If a try-error occurred
+    cat("Lav model NAs due to try error for timep:", N_timep, "\n")
+    return(rep(NA, length(fitnom_lavaan)))  # Return NA to handle error gracefully
   }
 }
 
-
 fit_model_blav <- function(y0, N_timep){ 
-  
-  # At the start of the function
   cat("Starting fit_model_blav with N_timep =", N_timep, "\n")
   print(str(y0))  # Check input data structure
-  # First check if null models fit successfully
-  print("nullmodel_0A")
+  
+  # Fit null model 0A
+  cat("Fitting null model 0A...\n")
   nullmodel_0A <- try(bsem(null_model_0A(N_timep), data = y0, 
                            n.chains = 4, burnin = 1000, sample = 1000), silent = TRUE)
-  
-  if(inherits(nullmodel_0A, "try-error")) {
-    cat("Null model 0A failed to fit\n")
+  if (inherits(nullmodel_0A, "try-error")) {
+    cat("Null model 0A failed to fit.\n")
     return(rep(NA, length(fitnom_blavaan)))
   }
   
-  print("nullmodel_0C")
+  # Fit null model 0C
+  cat("Fitting null model 0C...\n")
   nullmodel_0C <- try(bsem(null_model_0C(N_timep), data = y0, 
                            n.chains = 4, burnin = 1000, sample = 1000), silent = TRUE)
-  
-  if(inherits(nullmodel_0C, "try-error")) {
-    cat("Null model 0C failed to fit\n")
+  if (inherits(nullmodel_0C, "try-error")) {
+    cat("Null model 0C failed to fit.\n")
     return(rep(NA, length(fitnom_blavaan)))
   }
   
-  print("res1")
+  # Fit main model
+  cat("Fitting main model...\n")
   res1 <- try(bsem(dsem[[N_timep]], data = y0, std.lv = TRUE,
                    n.chains = 4, burnin = 1000, sample = 1000), silent = TRUE)
-  
-  if(!inherits(res1, "try-error")){ 
-    if(blavInspect(res1, "converged") == TRUE){ 
-      # Add error checking for fit indices
-      tryCatch({
+  if (!inherits(res1, "try-error")) {
+    if (blavInspect(res1, "converged")) {
+      # Calculate fit indices with error handling
+      cat("Main model converged. Calculating fit indices...\n")
+      return(tryCatch({
         fit_indices_C <- blavFitIndices(res1, baseline.model = nullmodel_0C)
         fit_indices_A <- blavFitIndices(res1, baseline.model = nullmodel_0A)
         
+        # Extract fit measures
         BCFI_0C <- mean(fit_indices_C@indices$BCFI)
         BTLI_0C <- mean(fit_indices_C@indices$BTLI)
         BNFI_0C <- mean(fit_indices_C@indices$BNFI)
@@ -463,7 +463,7 @@ fit_model_blav <- function(y0, N_timep){
         BTLI_0A <- mean(fit_indices_A@indices$BTLI)
         BNFI_0A <- mean(fit_indices_A@indices$BNFI)
         
-        # remaining fit indices (using either one, they should be the same)
+        # Remaining fit measures
         BRMSEA <- mean(fit_indices_A@indices$BRMSEA)
         BGammaHat <- mean(fit_indices_A@indices$BGammaHat)
         adjBGammaHat <- mean(fit_indices_A@indices$adjBGammaHat)
@@ -475,6 +475,7 @@ fit_model_blav <- function(y0, N_timep){
         chisq <- mean(fit_indices_A@details$chisq)
         pd <- fit_indices_A@details$pD
         
+        # Combine results into a single vector
         modelfit <- c(npar, ppp, marg_loglik, 
                       BRMSEA, BGammaHat, adjBGammaHat, BMc, 
                       BCFI_0C, BTLI_0C, BNFI_0C, 
@@ -487,17 +488,16 @@ fit_model_blav <- function(y0, N_timep){
       }, error = function(e) {
         cat("Blav Error in fit indices calculation:", conditionMessage(e), "\n")
         return(rep(NA, length(fitnom_blavaan)))
-      })
+      }))
     } else {
-      cat("Blav Model did not converge\n")
+      cat("Main model did not converge.\n")
       return(rep(NA, length(fitnom_blavaan)))
     }
   } else {
-    cat("Blav Model fitting failed\n")
+    cat("Main model fitting failed.\n")
     return(rep(NA, length(fitnom_blavaan)))
   }
 }
-
 
 ### STAN ###
 fit_model_stan <- function(ydat, ydat2, timepoints, person_size){ 
@@ -582,7 +582,7 @@ Size_crossloading <- c(0,.3,.6)
 # What models to specify and run: within time points/ between time points
 Type_crossloading <- c("none","tt","tt1")
 # Number of data samples to generate and run model fit on them
-N_sim_samples <- 1 # because each core does 1?
+N_sim_samples <- 1 # because each unique slurm worker does 1
 
 # DSEM model params
 phi0 <- diag(2)*.7+.3  # cov(eta)
@@ -621,36 +621,33 @@ for (i_pers in seq_along(N_p)) {
     if(i_pers == i_timep){
       print(paste("Matching position:", i_pers, "-> N_p:", n_p, "N_t:", n_t))
       
-      
-      #print(N_sim_samples)
-      for(idk in N_sim_samples){
-        
-        idk <- rslurm_id
-        
-        # Check theoretical specification requirement
-        if (n_t * 6 >= n_p) next
-        for (Type_misfit in Type_crossloading) {
-          # Picking conditions. Since we are not interested in power, we just want
-          # to fit 1 model with no misfit & type none, and then foreach misfit type
-          # 1 with misfit size = 0.3, one 0.6.
-          for (Size_misfit in Size_crossloading) {
-            # if type tt or tt1, dont run size=0, else run
-            if(Size_misfit == 0 && Type_misfit != "none"){
-              #cat('skipped over misfit type:', Type_misfit, " and size:", Size_misfit, "\n")
-            }else if(Size_misfit != 0 && Type_misfit == "none"){
-              #cat('skipped over misfit type:', Type_misfit, " and size:", Size_misfit, "\n")
-            }else{ 
+      # Check theoretical specification requirement
+      if (n_t * 6 >= n_p) next
+      for (Type_misfit in Type_crossloading) {
+        # Picking conditions. Since we are not interested in power, we just want
+        # to fit 1 model with no misfit & type none, and then foreach misfit type
+        # 1 with misfit size = 0.3, one 0.6.
+        for (Size_misfit in Size_crossloading) {
+          # if type tt or tt1, dont run size=0, else run
+          if(Size_misfit == 0 && Type_misfit != "none"){
+            #cat('skipped over misfit type:', Type_misfit, " and size:", Size_misfit, "\n")
+          }else if(Size_misfit != 0 && Type_misfit == "none"){
+            #cat('skipped over misfit type:', Type_misfit, " and size:", Size_misfit, "\n")
+          }else{ 
+            
+            #print(N_sim_samples)
+            for(sample in N_sim_samples){
               
               # Initialize factor loadings for the current condition
               ly1 <- initialize_ly1(Type_misfit, Size_misfit)
-
-              # Initialize empty matrix to store fit indices
+              
+              # Initialize empty matrix to store fit indices. 
               fitm_lavaan <- matrix(NA, N_sim_samples, length(fitnom_lavaan))
               fitm_blavaan <- matrix(NA, N_sim_samples, length(fitnom_blavaan))
-              #fitm_stan <- matrix(NA, 1, length(fitnom_stan))
+              #fitm_stan <- matrix(NA, N_sim_samples, length(fitnom_stan))
               
               #set core specific seed right before gendata
-              set.seed(24032024+idk+n_p)
+              set.seed(24032024+rslurm_id+n_p)
               temp_dat <- generate_temp_data(Type_misfit, n_p, n_t, phi0, mu0, ar0, ly0, ly1, td)
               ydat <- temp_dat$y # use array version of data for stan
               ydat2 <- temp_dat$y0 # use the transformed version in the getfit function
@@ -660,53 +657,49 @@ for (i_pers in seq_along(N_p)) {
                 y0 <- temp_dat[["y0"]]
                 
                 # Lavaan
-                fitm_lavaan[1, ] <- fit_model_lav(ydat2, n_t) # Fit model and store results
+                fitm_lavaan[sample, ] <- fit_model_lav(ydat2, n_t) # Fit model and store results
                 
                 # Blavaan
-                fitm_blavaan[1, ] <- fit_model_blav(ydat2, n_t) # Fit model and store results
+                fitm_blavaan[sample, ] <- fit_model_blav(ydat2, n_t) # Fit model and store results
                 
                 # Stan
-                #fitm_stan[1, ] <- as.numeric(fit_model_stan(ydat, ydat2, n_t, n_p)) # Fit model and store results
+                #fitm_stan[sample, ] <- as.numeric(fit_model_stan(ydat, ydat2, n_t, n_p)) # Fit model and store results
               } # end if pos definite, fit models
-            } # end if selecting 5 model conditions from 9 possible
-          } #end loop over misfit size
-        } #end loop over misfit type
-      } #end loop over number of simulations per slurm worker 
-          
-      # for each misfit type and misfit size
-
-      # 4.1. After each parallelisation run, save file ###################################################################
-      
-      # Colnames?
-      colnames(fitm_lavaan) <- fitnom_lavaan
-      colnames(fitm_blavaan) <- fitnom_blavaan
-      # #colnames(fitm_stan) <- fitnom_stan
-      # Move up one directory level to dsem_modelfit
-      parent_dir <- dirname(current_dir)
-      # Define the experiment name
-      Exp_day <- format(Sys.time(), "%Y-%m-%d") # Format: YYYY-MM-DD_HH-MM-SS
-      # Specify the save directory in dsem_modelfit/exp
-      save_dir <- file.path(parent_dir, "exp", Exp_day)
-      # Create the day directory if it does not exist
-      # TODO
-      if (!dir.exists(save_dir)) {
-        dir.create(save_dir, recursive = TRUE)
-      }
-      
-      # test
-      #exp_name <- paste("test", n_p, n_t, idk, "lav_blav", ".csv", sep='_')
-      # csv_path_test <- file.path(save_dir, exp_name)
-      # write.csv(random_numbers, file=csv_path_test, row.names = FALSE)
-      
-      # actual
-      exp_name_lav <- paste("dsem", n_p, n_t, idk, "lav", ".csv", sep='_')
-      exp_name_blav <- paste("dsem", n_p, n_t, idk, "blav", ".csv", sep='_')
-      
-      csv_path_lavaan <- file.path(save_dir, exp_name_lav)
-      write.csv(fitm_lavaan, file = csv_path_lavaan, row.names = FALSE)
-      csv_path_blavaan <- file.path(save_dir, exp_name_blav)
-      write.csv(fitm_blavaan, file = csv_path_blavaan, row.names = FALSE)
-      
+            } # end loop over number of simulation samples
+            
+            # 4. 1 SAVE MODELS ##############################################################################################
+            
+            colnames(fitm_lavaan) <- fitnom_lavaan
+            colnames(fitm_blavaan) <- fitnom_blavaan
+            # #colnames(fitm_stan) <- fitnom_stan
+            # Move up one directory level to dsem_modelfit
+            parent_dir <- dirname(current_dir)
+            # Define the experiment name
+            Exp_day <- format(Sys.time(), "%Y-%m-%d") # Format: YYYY-MM-DD_HH-MM-SS
+            # Specify the save directory in dsem_modelfit/exp
+            save_dir <- file.path(parent_dir, "exp", Exp_day)
+            # Create the day directory if it does not exist
+            if (!dir.exists(save_dir)) {
+              dir.create(save_dir, recursive = TRUE)
+            }
+            
+            # test
+            #exp_name <- paste("test", n_p, n_t, idk, "lav_blav", ".csv", sep='_')
+            # csv_path_test <- file.path(save_dir, exp_name)
+            # write.csv(random_numbers, file=csv_path_test, row.names = FALSE)
+            
+            # actual
+            exp_name_lav <- paste("dsem", n_p, n_t, rslurm_id, Type_misfit, Size_misfit, "lav", ".csv", sep='_')
+            exp_name_blav <- paste("dsem", n_p, n_t, rslurm_id, Type_misfit, Size_misfit, "blav", ".csv", sep='_')
+            
+            csv_path_lavaan <- file.path(save_dir, exp_name_lav)
+            write.csv(fitm_lavaan, file = csv_path_lavaan, row.names = FALSE)
+            csv_path_blavaan <- file.path(save_dir, exp_name_blav)
+            write.csv(fitm_blavaan, file = csv_path_blavaan, row.names = FALSE)
+            
+          } # end if selecting 5 model conditions from 9 possible
+        } #end loop over misfit size
+      } #end loop over misfit type
     } #end condition for correct workload spec. Sligt redundancy, but O(1)
   } #end loop over N_t
 } #end loop over N_p
