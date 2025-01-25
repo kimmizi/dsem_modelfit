@@ -234,13 +234,17 @@ plot_results = function(df, miss_size, miss_type, fit_index, power = 0.8){
   # Initialize plot
   par(new = FALSE)
   
-  index = 1
+  if(miss_type == "tt1"){
+    index = 2
+  }else{
+    index = 1
+  }
   
   condition = df$Type_misfit == miss_type & df$Size_misfit == miss_size & df$n_t_f == levels(df$n_t_f)[index]
   
   plot(sort(log(df$n_p[condition])), df[condition, fit_index][rank(df$n_p[condition])], ylim = c(0, 1), 
-       xlim = c(log(min(df$n_p)), log(max(df$n_p))), col = index, pch = index, type = "b",
-       axes = F, xlab = "N", ylab = "% rejected", main = fit_index)
+      xlim = c(log(min(df$n_p)), log(max(df$n_p))), col = index, pch = index, type = "b",
+      axes = F, xlab = "N", ylab = "% rejected", main = fit_index)
   
   for (index in 2:length(levels(df$n_t_f))) {
     par(new = TRUE)
@@ -254,15 +258,15 @@ plot_results = function(df, miss_size, miss_type, fit_index, power = 0.8){
   axis(1, at = log(N_p), labels = N_p)
   axis(2)
   abline(h = power, lty = 3)
-  
-  legend("topright", paste0("N_t = ", levels(df$n_t_f)), lty = 1, col = 1:length(levels(df$n_t_f)), pch = 1:length(levels(df$n_t_f)))
+  if(miss_type == "tt1"){
+    legend("topright", paste0("N_t = ", levels(df$n_t_f)[-1]), lty = 1, col = 2:length(levels(df$n_t_f)), pch = 2:length(levels(df$n_t_f)), border = "white")
+  }else{
+    legend("topright", paste0("N_t = ", levels(df$n_t_f)), lty = 1, col = 1:length(levels(df$n_t_f)), pch = 1:length(levels(df$n_t_f)), border = "white")
+  }
 }
 
-
-pdf("type1error01_v1_test.pdf", height = 3*4, width = 2*4) # create PDF
+pdf("type1error01_test.pdf", height = 3*4, width = 2*4) # create PDF
 par(mfrow = c(3, 2))
-
-# LABELING:
 plot_results(data_no_na_lav, miss_size = 0, miss_type = "none", fit_index = "pvalue_rejection_rate", power = .05)
 plot_results(data_no_na_lav, miss_size = 0, miss_type = "none", fit_index = "chisq_df_rejection_rate", power = .05)
 plot_results(data_no_na_lav, miss_size = 0, miss_type = "none", fit_index = "rmsea_rejection_rate", power = .05)
@@ -271,6 +275,25 @@ plot_results(data_no_na_lav, miss_size = 0, miss_type = "none", fit_index = "cfi
 plot_results(data_no_na_lav, miss_size = 0, miss_type = "none", fit_index = "tli_rejection_rate", power = .05)
 dev.off()
 
+pdf("power_tt1_0.6_test.pdf", height = 3*4, width = 2*4) # create PDF
+par(mfrow = c(3, 2))
+plot_results(data_no_na_lav, miss_size = 0.6, miss_type = "tt1", fit_index = "pvalue_rejection_rate", power = .80)
+plot_results(data_no_na_lav, miss_size = 0.6, miss_type = "tt1", fit_index = "chisq_df_rejection_rate", power = .80)
+plot_results(data_no_na_lav, miss_size = 0.6, miss_type = "tt1", fit_index = "rmsea_rejection_rate", power = .80)
+plot_results(data_no_na_lav, miss_size = 0.6, miss_type = "tt1", fit_index = "srmr_rejection_rate", power = .80)
+plot_results(data_no_na_lav, miss_size = 0.6, miss_type = "tt1", fit_index = "cfi_rejection_rate", power = .80)
+plot_results(data_no_na_lav, miss_size = 0.6, miss_type = "tt1", fit_index = "tli_rejection_rate", power = .80)
+dev.off()
+
+pdf("power_tt_0.6_test.pdf", height = 3*4, width = 2*4) # create PDF
+par(mfrow = c(3, 2))
+plot_results(data_no_na_lav, miss_size = 0.6, miss_type = "tt", fit_index = "pvalue_rejection_rate", power = .80)
+plot_results(data_no_na_lav, miss_size = 0.6, miss_type = "tt", fit_index = "chisq_df_rejection_rate", power = .80)
+plot_results(data_no_na_lav, miss_size = 0.6, miss_type = "tt", fit_index = "rmsea_rejection_rate", power = .80)
+plot_results(data_no_na_lav, miss_size = 0.6, miss_type = "tt", fit_index = "srmr_rejection_rate", power = .80)
+plot_results(data_no_na_lav, miss_size = 0.6, miss_type = "tt", fit_index = "cfi_rejection_rate", power = .80)
+plot_results(data_no_na_lav, miss_size = 0.6, miss_type = "tt", fit_index = "tli_rejection_rate", power = .80)
+dev.off()
 
 
 
