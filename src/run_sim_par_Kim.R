@@ -577,14 +577,14 @@ cat("Workload_id =", sim_num, '\n')
 # Workload specific conditions
 # Number of people / time point?
 #N_p <- c(91)
-#N_p <- c(31, 61, 91, 121, 151, 181, 211, 501, 1001, 1501, 2001)
-N_p <- c(31, 61, 91)
+#N_p <- c(31, 61, 91, 121, 151, 181, 211, 501, 1001, 1501, 2001, 2501)
+N_p <- c(31, 61, 91, 121, 211, 501, 1001, 1501)
 
 
 # Number of measurement time points
 #N_t <- c(2) # N_timep
 #N_t <- c(1:5, 10, 15) # N_timep
-N_t <- c(1:3) # N_timep
+N_t <- c(1:5) # N_timep
 
 
 cat("Workload N_p:", N_p, "\n")
