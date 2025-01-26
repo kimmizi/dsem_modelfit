@@ -240,7 +240,7 @@ plot_results = function(df, miss_size, miss_type, fit_index, power = 0.8){
     index = 1
   }
   
-  condition = df$Type_misfit == miss_type & df$Size_misfit == miss_size & df$n_t_f == levels(df$n_t_f)[index]
+  condition = df$Type_misfit == miss_type & df$Size_misfit == miss_size & df$n_t_f == levels(df$n_t_f)[index] & !is.na(df[[fit_index]])
   
   plot(sort(log(df$n_p[condition])), df[condition, fit_index][rank(df$n_p[condition])], ylim = c(0, 1), 
       xlim = c(log(min(df$n_p)), log(max(df$n_p))), col = index, pch = index, type = "b",

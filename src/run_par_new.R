@@ -6,7 +6,9 @@
 # 3. For each seed, we have a new gendata, new sim
 # 4. Somehow saves each run in a separate file
 
-debugging_mode = "SERVER" #"LOCAL"
+debugging_mode = "LOCAL" #"LOCAL"
+
+
 
 # 1.1. Packages and file dependencies #######################################################################
 
@@ -20,6 +22,8 @@ library(rstan)
 # How might this interact with the other part of the simulation?
 rstan_options(auto_write = TRUE)
 options(mc.cores = parallel::detectCores())
+
+
 
 # 1.2. DSEM models ###########################################################################################
 
@@ -49,8 +53,8 @@ if(debugging_mode != "LOCAL"){
   
 }else{
   # ONLY FOR LOCAL USE
-  current_dir = "C:/Users/mihai/Documents/Faculta/Research Project/dsem_modelfit/src"
-  #current_dir = "/Users/kimzierahn/PycharmProjects/dsem_modelfit/src"
+  #current_dir = "C:/Users/mihai/Documents/Faculta/Research Project/dsem_modelfit/src"
+  current_dir = "/Users/kimzierahn/PycharmProjects/dsem_modelfit/src"
 }
 
 
@@ -59,6 +63,8 @@ source(file.path(current_dir,  "lavaan_dsem_models_randomintercept.R"))
 source(file.path(current_dir,  "lavaan_dsem_models_randomintercept_tt.R"))
 source(file.path(current_dir,  "lavaan_dsem_models_randomintercept_tt1.R"))
 source(file.path(current_dir,  "lavaan_dsem_nullmodels.R"))
+
+
 
 # 1.3. Workload specifications ###############################################################################
 
@@ -147,6 +153,8 @@ workloads <- list(
     )
   )
 )
+
+
 
 # 1.4. Helper functions ################################################################################
 
@@ -270,6 +278,8 @@ gendata01 <- function(N, Nt, phi0, mu0, ar0, ly0, ly1, td){
   out
 }
 
+
+
 #### Second function generating data using between-time points cross-loadings ####
 
 # Inputs:
@@ -381,6 +391,7 @@ gendata02 <- function(N, Nt, phi0, mu0, ar0, ly0, ly1, td){
 }
 
 
+
 # Wrapper function for the previous two to initialize simulation specific data set
 generate_temp_data <- function(Type_crossloading, N_pers, N_timep, phi0, mu0, ar0, ly0, ly1, td) {
   if (Type_crossloading == "tt") {
@@ -393,6 +404,8 @@ generate_temp_data <- function(Type_crossloading, N_pers, N_timep, phi0, mu0, ar
     stop("Invalid misfit type. Must be one of tt, tt1, none")
   }
 }
+
+
 
 ### LAVAAN ###
 # Helper function to fit a single model, capture fit specific errors for later
@@ -420,6 +433,9 @@ fit_model_lav <- function(y0, N_timep){
   }
 }
 
+
+
+### BLAVAAN ###
 fit_model_blav <- function(y0, N_timep){ 
   cat("Starting fit_model_blav with N_timep =", N_timep, "\n")
   print(str(y0))  # Check input data structure
@@ -428,52 +444,59 @@ fit_model_blav <- function(y0, N_timep){
   cat("Fitting null model 0A...\n")
   nullmodel_0A <- try(bsem(null_model_0A(N_timep), data = y0, 
                            n.chains = 4, burnin = 1000, sample = 1000), silent = TRUE)
-  if (inherits(nullmodel_0A, "try-error")) {
-    cat("Null model 0A failed to fit.\n")
-    return(rep(NA, length(fitnom_blavaan)))
-  }
   
   # Fit null model 0C
   cat("Fitting null model 0C...\n")
   nullmodel_0C <- try(bsem(null_model_0C(N_timep), data = y0, 
                            n.chains = 4, burnin = 1000, sample = 1000), silent = TRUE)
-  if (inherits(nullmodel_0C, "try-error")) {
-    cat("Null model 0C failed to fit.\n")
-    return(rep(NA, length(fitnom_blavaan)))
-  }
   
   # Fit main model
   cat("Fitting main model...\n")
   res1 <- try(bsem(dsem[[N_timep]], data = y0, std.lv = TRUE,
                    n.chains = 4, burnin = 1000, sample = 1000), silent = TRUE)
+  
   if (!inherits(res1, "try-error")) {
     if (blavInspect(res1, "converged")) {
       # Calculate fit indices with error handling
       cat("Main model converged. Calculating fit indices...\n")
       return(tryCatch({
-        fit_indices_C <- blavFitIndices(res1, baseline.model = nullmodel_0C)
-        fit_indices_A <- blavFitIndices(res1, baseline.model = nullmodel_0A)
+        if (inherits(nullmodel_0A, "try-error")) {
+          cat("Null model 0A failed to fit.\n")
+          BCFI_0A <- NA
+          BTLI_0A <- NA
+          BNFI_0A <- NA
+        }else{
+          fit_indices_A <- blavFitIndices(res1, baseline.model = nullmodel_0A)
+          BCFI_0A <- mean(fit_indices_A@indices$BCFI)
+          BTLI_0A <- mean(fit_indices_A@indices$BTLI)
+          BNFI_0A <- mean(fit_indices_A@indices$BNFI)
+        }
         
-        # Extract fit measures
-        BCFI_0C <- mean(fit_indices_C@indices$BCFI)
-        BTLI_0C <- mean(fit_indices_C@indices$BTLI)
-        BNFI_0C <- mean(fit_indices_C@indices$BNFI)
+        if (inherits(nullmodel_0C, "try-error")) {
+          cat("Null model 0C failed to fit.\n")
+          BCFI_0C <- NA
+          BTLI_0C <- NA
+          BNFI_0C <- NA
+        }else{
+          fit_indices_C <- blavFitIndices(res1, baseline.model = nullmodel_0C)
+          BCFI_0C <- mean(fit_indices_C@indices$BCFI)
+          BTLI_0C <- mean(fit_indices_C@indices$BTLI)
+          BNFI_0C <- mean(fit_indices_C@indices$BNFI)
+        }
         
-        BCFI_0A <- mean(fit_indices_A@indices$BCFI)
-        BTLI_0A <- mean(fit_indices_A@indices$BTLI)
-        BNFI_0A <- mean(fit_indices_A@indices$BNFI)
+        fit_indices <- blavFitIndices(res1)
         
         # Remaining fit measures
-        BRMSEA <- mean(fit_indices_A@indices$BRMSEA)
-        BGammaHat <- mean(fit_indices_A@indices$BGammaHat)
-        adjBGammaHat <- mean(fit_indices_A@indices$adjBGammaHat)
-        BMc <- mean(fit_indices_A@indices$BMc)
+        BRMSEA <- mean(fit_indices@indices$BRMSEA)
+        BGammaHat <- mean(fit_indices@indices$BGammaHat)
+        adjBGammaHat <- mean(fit_indices@indices$adjBGammaHat)
+        BMc <- mean(fit_indices@indices$BMc)
         
         npar <- blavInspect(res1, "npar")
         marg_loglik <- blavInspect(res1, "test")[[1]]$stat
         ppp <- blavInspect(res1, "test")[[2]]$stat
-        chisq <- mean(fit_indices_A@details$chisq)
-        pd <- fit_indices_A@details$pD
+        chisq <- mean(fit_indices@details$chisq)
+        pd <- fit_indices@details$pD
         
         # Combine results into a single vector
         modelfit <- c(npar, ppp, marg_loglik, 
@@ -498,6 +521,8 @@ fit_model_blav <- function(y0, N_timep){
     return(rep(NA, length(fitnom_blavaan)))
   }
 }
+
+
 
 ### STAN ###
 fit_model_stan <- function(ydat, ydat2, timepoints, person_size){ 
@@ -526,6 +551,8 @@ fit_model_stan <- function(ydat, ydat2, timepoints, person_size){
   }
 } 
 
+
+
 # 2.1. Read from slurm bash file: workload, specific seed from array, core? #######################################
 
 if(debugging_mode != "LOCAL"){
@@ -548,6 +575,8 @@ if (is.null(current_sim)) {
 }
 #current_sim <- 4
 
+
+
 # 2.2. Test and make sure slurm unique_id and worloads are working ################################################
 
 if(debugging_mode != "LOCAL"){
@@ -565,11 +594,16 @@ cat('rslurm_id=', rslurm_id, '\n')
 # Workload id
 cat("Workload_id =", sim_num, '\n')
 
+N_p <- c(91)
+N_t <- c(1:3) # N_timep
+
+
 # Workload specific conditions
 N_t <- current_sim$combinations$timepoint
 N_p <- current_sim$combinations$person_size
 cat("Workload N_p:", N_p, "\n")
 cat("Workload N_t:", N_t, "\n")
+
 
 
 # 3.0 Global vars ##############################################################################################
@@ -609,6 +643,8 @@ fitnom_blavaan <- c("npar", "PPP", "MargLogLik",
                     "chisq", "pd")
 fitnom_stan <- c("BRMSEA", "BGammahat", "adjBGammahat", 
                  "BMc", "pd_1", "p_1", "loglik", "logliksat_1", "chisq")
+
+
 
 # 3.0.1 Simulation loop ###########################################################################################
 for (i_pers in seq_along(N_p)) {
