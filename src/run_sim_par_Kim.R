@@ -414,7 +414,7 @@ fit_model_lav <- function(y0, N_timep){
       fitmeasures(res1)  
     }
     else { # if model did not converge: save NAs so that simulation doesnt get broken
-      cat("Lav model with ", N_timep, "did not converge.")
+      cat("Lav model with", N_timep, "timepoints did not converge. \n")
       return(rep(NA, length(fitnom_lavaan)))
     }
   } 
@@ -561,15 +561,15 @@ cat("Workload_id =", sim_num, '\n')
 
 # Workload specific conditions
 # Number of people / time point?
-N_p <- c(91)
-#N_p <- c(31, 61, 91, 121, 151, 181, 211, 501, 1001, 1501, 2001, 2501)
+#N_p <- c(91)
+N_p <- c(31, 61, 91, 121, 151, 181, 211, 501, 1001, 1501, 2001)
 #N_p <- c(31, 61, 91, 121, 211, 501, 1001, 1501)
 
 
 # Number of measurement time points
 #N_t <- c(2) # N_timep
 #N_t <- c(1:5, 10, 15) # N_timep
-N_t <- c(1:3) # N_timep
+N_t <- c(10, 15) # N_timep
 
 
 cat("Workload N_p:", N_p, "\n")
@@ -587,7 +587,7 @@ Size_crossloading <- c(0, .3, .6)
 # What models to specify and run: within time points/ between time points
 Type_crossloading <- c("none", "tt", "tt1")
 # Number of data samples to generate and run model fit on them
-N_sim_samples <- 1 # because each core does 1?
+N_sim_samples <- 50 # because each core does 1?
 
 # DSEM model params
 phi0 <- diag(2)*.7+.3  # cov(eta)
@@ -660,7 +660,7 @@ for (i_pers in seq_along(N_p)) {
             
             # Initialize empty matrix to store fit indices
             fitm_lavaan <- matrix(NA, N_sim_samples, length(fitnom_lavaan))
-            fitm_blavaan <- matrix(NA, N_sim_samples, length(fitnom_blavaan))
+            #fitm_blavaan <- matrix(NA, N_sim_samples, length(fitnom_blavaan))
             #fitm_stan <- matrix(NA, 1, length(fitnom_stan))
             
               
@@ -682,7 +682,7 @@ for (i_pers in seq_along(N_p)) {
                   fitm_lavaan[idk, ] <- fit_model_lav(ydat2, n_t) # Fit model and store results
                 
                   # Blavaan
-                  fitm_blavaan[idk, ] <- fit_model_blav(ydat2, n_t) # Fit model and store results
+                  #fitm_blavaan[idk, ] <- fit_model_blav(ydat2, n_t) # Fit model and store results
                 
                   # Stan
                   #fitm_stan[1, ] <- as.numeric(fit_model_stan(ydat, ydat2, n_t, n_p)) # Fit model and store results
@@ -695,7 +695,7 @@ for (i_pers in seq_along(N_p)) {
               
             # Colnames?
             colnames(fitm_lavaan) <- fitnom_lavaan
-            colnames(fitm_blavaan) <- fitnom_blavaan
+            #colnames(fitm_blavaan) <- fitnom_blavaan
             # #colnames(fitm_stan) <- fitnom_stan
             # Move up one directory level to dsem_modelfit
             parent_dir <- dirname(current_dir)
@@ -716,12 +716,12 @@ for (i_pers in seq_along(N_p)) {
             
             # actual
             exp_name_lav <- paste("dsem", n_p, n_t, idk, Type_misfit, Size_misfit, "lav", ".csv", sep='_')
-            exp_name_blav <- paste("dsem", n_p, n_t, idk, Type_misfit, Size_misfit, "blav", ".csv", sep='_')
+            # exp_name_blav <- paste("dsem", n_p, n_t, idk, Type_misfit, Size_misfit, "blav", ".csv", sep='_')
             
             csv_path_lavaan <- file.path(save_dir, exp_name_lav)
             write.csv(fitm_lavaan, file = csv_path_lavaan, row.names = FALSE)
-            csv_path_blavaan <- file.path(save_dir, exp_name_blav)
-            write.csv(fitm_blavaan, file = csv_path_blavaan, row.names = FALSE)
+            # csv_path_blavaan <- file.path(save_dir, exp_name_blav)
+            # write.csv(fitm_blavaan, file = csv_path_blavaan, row.names = FALSE)
       
           } # end if selecting 5 model conditions from 9 possible
         } #end loop over misfit size
