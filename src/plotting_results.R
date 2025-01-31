@@ -30,7 +30,7 @@ Size_crossloading = c(0, .3, .6)
 Type_crossloading = c("none", "tt", "tt1")
 
 #N_sim_samples = 50 
-N_sim_samples = 550:650
+N_sim_samples = 550:700
 
 
 # frequentist fit indices
@@ -397,8 +397,8 @@ plot_results = function(df, miss_size, miss_type, fit_index, power = 0.8, title)
 
 
 #### LAVAAN ####
-pdf("type1error01_lav.pdf", height = 3*4, width = 2*4) # create PDF
-par(mfrow = c(3, 2))
+pdf("type1error01_lav.pdf", height = 2*4, width = 3*4) # create PDF
+par(mfrow = c(2, 3))
 plot_results(data_lav_fit, miss_size = 0, miss_type = "none", fit_index = "pvalue_rejection_rate", power = .05, title = "Type 1 Error: p-value")
 plot_results(data_lav_fit, miss_size = 0, miss_type = "none", fit_index = "chisq_df_rejection_rate", power = .05, title = "Type 1 Error: chi-squared")
 plot_results(data_lav_fit, miss_size = 0, miss_type = "none", fit_index = "rmsea_rejection_rate", power = .05, title = "Type 1 Error: RMSEA")
@@ -407,8 +407,8 @@ plot_results(data_lav_fit, miss_size = 0, miss_type = "none", fit_index = "cfi_r
 plot_results(data_lav_fit, miss_size = 0, miss_type = "none", fit_index = "tli_rejection_rate", power = .05, title = "Type 1 Error: TLI")
 dev.off()
 
-pdf("power_tt1_0.6_lav.pdf", height = 3*4, width = 2*4) # create PDF
-par(mfrow = c(3, 2))
+pdf("power_tt1_0.6_lav.pdf", height = 2*4, width = 3*4) # create PDF
+par(mfrow = c(2, 3))
 plot_results(data_lav_fit, miss_size = 0.6, miss_type = "tt1", fit_index = "pvalue_rejection_rate", power = .80, title = "Power: p-value")
 plot_results(data_lav_fit, miss_size = 0.6, miss_type = "tt1", fit_index = "chisq_df_rejection_rate", power = .80, title = "Power: chi-squared")
 plot_results(data_lav_fit, miss_size = 0.6, miss_type = "tt1", fit_index = "rmsea_rejection_rate", power = .80, title = "Power: RMSEA")
@@ -417,8 +417,8 @@ plot_results(data_lav_fit, miss_size = 0.6, miss_type = "tt1", fit_index = "cfi_
 plot_results(data_lav_fit, miss_size = 0.6, miss_type = "tt1", fit_index = "tli_rejection_rate", power = .80, title = "Power: TLI")
 dev.off()
 
-pdf("power_tt_0.6_lav.pdf", height = 3*4, width = 2*4) # create PDF
-par(mfrow = c(3, 2))
+pdf("power_tt_0.6_lav.pdf", height = 2*4, width = 3*4) # create PDF
+par(mfrow = c(2, 3))
 plot_results(data_lav_fit, miss_size = 0.6, miss_type = "tt", fit_index = "pvalue_rejection_rate", power = .80, title = "Power: p-value")
 plot_results(data_lav_fit, miss_size = 0.6, miss_type = "tt", fit_index = "chisq_df_rejection_rate", power = .80, title = "Power: chi-squared")
 plot_results(data_lav_fit, miss_size = 0.6, miss_type = "tt", fit_index = "rmsea_rejection_rate", power = .80, title = "Power: RMSEA")
@@ -427,8 +427,8 @@ plot_results(data_lav_fit, miss_size = 0.6, miss_type = "tt", fit_index = "cfi_r
 plot_results(data_lav_fit, miss_size = 0.6, miss_type = "tt", fit_index = "tli_rejection_rate", power = .80, title = "Power: TLI")
 dev.off()
 
-pdf("power_tt1_0.3_lav.pdf", height = 3*4, width = 2*4) # create PDF
-par(mfrow = c(3, 2))
+pdf("power_tt1_0.3_lav.pdf", height = 2*4, width = 3*4) # create PDF
+par(mfrow = c(2, 3))
 plot_results(data_lav_fit, miss_size = 0.3, miss_type = "tt1", fit_index = "pvalue_rejection_rate", power = .80, title = "Power: p-value")
 plot_results(data_lav_fit, miss_size = 0.3, miss_type = "tt1", fit_index = "chisq_df_rejection_rate", power = .80, title = "Power: chi-squared")
 plot_results(data_lav_fit, miss_size = 0.3, miss_type = "tt1", fit_index = "rmsea_rejection_rate", power = .80, title = "Power: RMSEA")
@@ -437,8 +437,8 @@ plot_results(data_lav_fit, miss_size = 0.3, miss_type = "tt1", fit_index = "cfi_
 plot_results(data_lav_fit, miss_size = 0.3, miss_type = "tt1", fit_index = "tli_rejection_rate", power = .80, title = "Power: TLI")
 dev.off()
 
-pdf("power_tt_0.3_lav.pdf", height = 3*4, width = 2*4) # create PDF
-par(mfrow = c(3, 2))
+pdf("power_tt_0.3_lav.pdf", height = 2*4, width = 3*4) # create PDF
+par(mfrow = c(2, 3))
 plot_results(data_lav_fit, miss_size = 0.3, miss_type = "tt", fit_index = "pvalue_rejection_rate", power = .80, title = "Power: p-value")
 plot_results(data_lav_fit, miss_size = 0.3, miss_type = "tt", fit_index = "chisq_df_rejection_rate", power = .80, title = "Power: chi-squared")
 plot_results(data_lav_fit, miss_size = 0.3, miss_type = "tt", fit_index = "rmsea_rejection_rate", power = .80, title = "Power: RMSEA")
@@ -450,8 +450,8 @@ dev.off()
 
 
 #### BLAVAAN ####
-pdf("type1error01_blav.pdf", height = 3*4, width = 2*4) # create PDF
-par(mfrow = c(3, 2))
+pdf("type1error01_blav.pdf", height = 2*4, width = 3*4) # create PDF
+par(mfrow = c(2, 3))
 plot_results(data_blav_fit, miss_size = 0, miss_type = "none", fit_index = "cfi_rejection_rate_0A", power = .05, title = "Type 1 Error: CFI_0A")
 plot_results(data_blav_fit, miss_size = 0, miss_type = "none", fit_index = "cfi_rejection_rate_0C", power = .05, title = "Type 1 Error: CFI_0C")
 plot_results(data_blav_fit, miss_size = 0, miss_type = "none", fit_index = "tli_rejection_rate_0A", power = .05, title = "Type 1 Error: TLI_0A")
@@ -460,8 +460,8 @@ plot_results(data_blav_fit, miss_size = 0, miss_type = "none", fit_index = "nfi_
 plot_results(data_blav_fit, miss_size = 0, miss_type = "none", fit_index = "nfi_rejection_rate_0C", power = .05, title = "Type 1 Error: NFI_0C")
 dev.off()
 
-pdf("power_tt1_0.6_blav.pdf", height = 3*4, width = 2*4) # create PDF
-par(mfrow = c(3, 2))
+pdf("power_tt1_0.6_blav.pdf", height = 2*4, width = 3*4) # create PDF
+par(mfrow = c(2, 3))
 plot_results(data_blav_fit, miss_size = 0.6, miss_type = "tt1", fit_index = "cfi_rejection_rate_0A", power = .80, title = "Power: CFI_0A")
 plot_results(data_blav_fit, miss_size = 0.6, miss_type = "tt1", fit_index = "cfi_rejection_rate_0C", power = .80, title = "Power: CFI_0C")
 plot_results(data_blav_fit, miss_size = 0.6, miss_type = "tt1", fit_index = "tli_rejection_rate_0A", power = .80, title = "Power: TLI_0A")
@@ -470,8 +470,8 @@ plot_results(data_blav_fit, miss_size = 0.6, miss_type = "tt1", fit_index = "nfi
 plot_results(data_blav_fit, miss_size = 0.6, miss_type = "tt1", fit_index = "nfi_rejection_rate_0C", power = .80, title = "Power: NFI_0C")
 dev.off()
 
-pdf("power_tt_0.6_blav.pdf", height = 3*4, width = 2*4) # create PDF
-par(mfrow = c(3, 2))
+pdf("power_tt_0.6_blav.pdf", height = 2*4, width = 3*4) # create PDF
+par(mfrow = c(2, 3))
 plot_results(data_blav_fit, miss_size = 0.6, miss_type = "tt", fit_index = "cfi_rejection_rate_0A", power = .80, title = "Power: CFI_0A")
 plot_results(data_blav_fit, miss_size = 0.6, miss_type = "tt", fit_index = "cfi_rejection_rate_0C", power = .80, title = "Power: CFI_0C")
 plot_results(data_blav_fit, miss_size = 0.6, miss_type = "tt", fit_index = "tli_rejection_rate_0A", power = .80, title = "Power: TLI_0A")
@@ -480,8 +480,8 @@ plot_results(data_blav_fit, miss_size = 0.6, miss_type = "tt", fit_index = "nfi_
 plot_results(data_blav_fit, miss_size = 0.6, miss_type = "tt", fit_index = "nfi_rejection_rate_0C", power = .80, title = "Power: NFI_0C")
 dev.off()
 
-pdf("power_tt1_0.3_blav.pdf", height = 3*4, width = 2*4) # create PDF
-par(mfrow = c(3, 2))
+pdf("power_tt1_0.3_blav.pdf", height = 2*4, width = 3*4) # create PDF
+par(mfrow = c(2, 3))
 plot_results(data_blav_fit, miss_size = 0.3, miss_type = "tt1", fit_index = "cfi_rejection_rate_0A", power = .80, title = "Power: CFI_0A")
 plot_results(data_blav_fit, miss_size = 0.3, miss_type = "tt1", fit_index = "cfi_rejection_rate_0C", power = .80, title = "Power: CFI_0C")
 plot_results(data_blav_fit, miss_size = 0.3, miss_type = "tt1", fit_index = "tli_rejection_rate_0A", power = .80, title = "Power: TLI_0A")
@@ -490,8 +490,8 @@ plot_results(data_blav_fit, miss_size = 0.3, miss_type = "tt1", fit_index = "nfi
 plot_results(data_blav_fit, miss_size = 0.3, miss_type = "tt1", fit_index = "nfi_rejection_rate_0C", power = .80, title = "Power: NFI_0C")
 dev.off()
 
-pdf("power_tt_0.3_blav.pdf", height = 3*4, width = 2*4) # create PDF
-par(mfrow = c(3, 2))
+pdf("power_tt_0.3_blav.pdf", height = 2*4, width = 3*44) # create PDF
+par(mfrow = c(2, 3))
 plot_results(data_blav_fit, miss_size = 0.3, miss_type = "tt", fit_index = "cfi_rejection_rate_0A", power = .80, title = "Power: CFI_0A")
 plot_results(data_blav_fit, miss_size = 0.3, miss_type = "tt", fit_index = "cfi_rejection_rate_0C", power = .80, title = "Power: CFI_0C")
 plot_results(data_blav_fit, miss_size = 0.3, miss_type = "tt", fit_index = "tli_rejection_rate_0A", power = .80, title = "Power: TLI_0A")
@@ -502,7 +502,7 @@ dev.off()
 
 
 
-pdf("type1error01_blav_2.pdf", height = 3*4, width = 2*4) # create PDF
+pdf("type1error01_blav_2.pdf", height = 2*4, width = 3*4) # create PDF
 par(mfrow = c(2, 2))
 plot_results(data_blav_fit, miss_size = 0, miss_type = "none", fit_index = "brmsea_rejection_rate", power = .05, title = "Type 1 Error: BRMSEA")
 plot_results(data_blav_fit, miss_size = 0, miss_type = "none", fit_index = "bgammahat_rejection_rate", power = .05, title = "Type 1 Error: BGammaHat")
@@ -510,7 +510,7 @@ plot_results(data_blav_fit, miss_size = 0, miss_type = "none", fit_index = "adjb
 plot_results(data_blav_fit, miss_size = 0, miss_type = "none", fit_index = "bmc_rejection_rate", power = .05, title = "Type 1 Error: BMc")
 dev.off()
 
-pdf("power_tt1_0.6_blav_2.pdf", height = 3*4, width = 2*4) # create PDF
+pdf("power_tt1_0.6_blav_2.pdf", height = 2*4, width = 3*4) # create PDF
 par(mfrow = c(2, 2))
 plot_results(data_blav_fit, miss_size = 0.6, miss_type = "tt1", fit_index = "brmsea_rejection_rate", power = .80, title = "Power: BRMSEA")
 plot_results(data_blav_fit, miss_size = 0.6, miss_type = "tt1", fit_index = "bgammahat_rejection_rate", power = .80, title = "Power: BGammaHat")
@@ -518,7 +518,7 @@ plot_results(data_blav_fit, miss_size = 0.6, miss_type = "tt1", fit_index = "adj
 plot_results(data_blav_fit, miss_size = 0.6, miss_type = "tt1", fit_index = "bmc_rejection_rate", power = .80, title = "Power: BMc")
 dev.off()
 
-pdf("power_tt_0.6_blav_2.pdf", height = 3*4, width = 2*4) # create PDF
+pdf("power_tt_0.6_blav_2.pdf", height = 2*4, width = 3*4) # create PDF
 par(mfrow = c(2, 2))
 plot_results(data_blav_fit, miss_size = 0.6, miss_type = "tt", fit_index = "brmsea_rejection_rate", power = .80, title = "Power: BRMSEA")
 plot_results(data_blav_fit, miss_size = 0.6, miss_type = "tt", fit_index = "bgammahat_rejection_rate", power = .80, title = "Power: BGammaHat")
@@ -526,7 +526,7 @@ plot_results(data_blav_fit, miss_size = 0.6, miss_type = "tt", fit_index = "adjb
 plot_results(data_blav_fit, miss_size = 0.6, miss_type = "tt", fit_index = "bmc_rejection_rate", power = .80, title = "Power: BMc")
 dev.off()
 
-pdf("power_tt1_0.3_blav_2.pdf", height = 3*4, width = 2*4) # create PDF
+pdf("power_tt1_0.3_blav_2.pdf", height = 2*4, width = 3*4) # create PDF
 par(mfrow = c(2, 2))
 plot_results(data_blav_fit, miss_size = 0.3, miss_type = "tt1", fit_index = "brmsea_rejection_rate", power = .80, title = "Power: BRMSEA")
 plot_results(data_blav_fit, miss_size = 0.3, miss_type = "tt1", fit_index = "bgammahat_rejection_rate", power = .80, title = "Power: BGammaHat")
@@ -534,7 +534,7 @@ plot_results(data_blav_fit, miss_size = 0.3, miss_type = "tt1", fit_index = "adj
 plot_results(data_blav_fit, miss_size = 0.3, miss_type = "tt1", fit_index = "bmc_rejection_rate", power = .80, title = "Power: BMc")
 dev.off()
 
-pdf("power_tt_0.3_blav_2.pdf", height = 3*4, width = 2*4) # create PDF
+pdf("power_tt_0.3_blav_2.pdf", height = 2*4, width = 3*4) # create PDF
 par(mfrow = c(2, 2))
 plot_results(data_blav_fit, miss_size = 0.3, miss_type = "tt", fit_index = "brmsea_rejection_rate", power = .80, title = "Power: BRMSEA")
 plot_results(data_blav_fit, miss_size = 0.3, miss_type = "tt", fit_index = "bgammahat_rejection_rate", power = .80, title = "Power: BGammaHat")
@@ -563,7 +563,7 @@ plot_results_pow_typ1 = function(df, miss_size, miss_type, fit_index, timepoint,
   
   plot(sort(log(df$n_p[condition_missfit])), df[condition_missfit , fit_index][rank(df$n_p[condition_missfit])], ylim = c(0, 1), 
        xlim = log(c(min(df$n_p), max(df$n_p))), col = "royalblue", pch = 1, type = "b",
-       axes = F, xlab = "N", ylab = "% rejected", main = paste(title, "Timepoint:", timepoint, miss_type, miss_size))
+       axes = F, xlab = "N", ylab = "% rejected", main = paste(title, "time point:", timepoint, miss_type, miss_size))
   
   par(new = T)
   plot(sort(log(df$n_p[condition_none])), df[condition_none , fit_index][rank(df$n_p[condition_none])], ylim = c(0, 1), 
@@ -657,7 +657,7 @@ plot_results_pow_typ1_all = function(df, fit_index, timepoint, power = 0.8, type
   
   plot(sort(log(df$n_p[condition_tt_0.3])), df[condition_tt_0.3 , fit_index][rank(df$n_p[condition_tt_0.3])], ylim = c(0, 1), 
        xlim = log(c(min(df$n_p), max(df$n_p))), col = "royalblue", pch = 1, type = "b",
-       axes = F, xlab = "N", ylab = "% rejected", main = paste(title, "Timepoint:", timepoint))
+       axes = F, xlab = "N", ylab = "% rejected", main = paste(title, "time points:", timepoint))
   
   par(new = T)
   plot(sort(log(df$n_p[condition_tt_0.6])), df[condition_tt_0.6 , fit_index][rank(df$n_p[condition_tt_0.6])], ylim = c(0, 1), 
@@ -758,12 +758,12 @@ plot_results_lav_blav = function(df_lav, df_blav, miss_size, miss_type, fit_inde
   
   plot(sort(log(df_lav$n_p[condition_missfit])), df_lav[condition_missfit , fit_index_lav][rank(df_lav$n_p[condition_missfit])], ylim = c(0, 1), 
        xlim = log(c(min(df_lav$n_p), max(df_lav$n_p))), col = "lightskyblue", pch = 1, type = "b",
-       axes = F, xlab = "N", ylab = "% rejected", main = paste(title, miss_type, miss_size, sep = " "))
+       axes = F, xlab = "N", ylab = "% rejected", main = paste(title, miss_type, miss_size, "time points:", timepoint, sep = " "))
   
   par(new = T)
   plot(sort(log(df_lav$n_p[condition_none])), df_lav[condition_none , fit_index_lav][rank(df_lav$n_p[condition_none])], ylim = c(0, 1), 
        xlim = log(c(min(df_lav$n_p), max(df_lav$n_p))), col = "darkorange2", pch = 2, type = "b",
-       axes = F, xlab = "", ylab = "", main = paste(title, miss_type, miss_size, sep = " "))
+       axes = F, xlab = "", ylab = "", main = paste(title, miss_type, miss_size, "time points:", timepoint, sep = " "))
   
   
   # blavaan
@@ -773,16 +773,14 @@ plot_results_lav_blav = function(df_lav, df_blav, miss_size, miss_type, fit_inde
   par(new = T)
   plot(sort(log(df_blav$n_p[condition_missfit])), df_blav[condition_missfit , fit_index_blav][rank(df_blav$n_p[condition_missfit])], ylim = c(0, 1), 
        xlim = log(c(min(df_blav$n_p), max(df_blav$n_p))), col = "royalblue", pch = 3, type = "b",
-       axes = F, xlab = "", ylab = "", main = paste(title, miss_type, miss_size, sep = " "))
+       axes = F, xlab = "", ylab = "", main = paste(title, miss_type, miss_size, "time points:", timepoint, sep = " "))
   
   par(new = T)
   plot(sort(log(df_blav$n_p[condition_none])), df_blav[condition_none , fit_index_blav][rank(df_blav$n_p[condition_none])], ylim = c(0, 1), 
        xlim = log(c(min(df_blav$n_p), max(df_blav$n_p))), col = "goldenrod1", pch = 4, type = "b",
-       axes = F, xlab = "", ylab = "", main = paste(title, miss_type, miss_size, sep = " "))
+       axes = F, xlab = "", ylab = "", main = paste(title, miss_type, miss_size, "time points:", timepoint, sep = " "))
   
-  
-  
-  
+
   axis(1, log(N_p), N_p)
   axis(2)
   abline(h = c(type1, power), lty = 3)
@@ -819,7 +817,7 @@ plot_results_lav_blav(data_lav_fit, data_blav_fit, miss_size = 0.6, miss_type = 
                       fit_index_blav = "cfi_rejection_rate_0C", timepoint = 2, power = 0.8, type1 = 0.05, title = "CFI")
 dev.off()
   
-pdf("plot_results_lav_blav_TLI.pdf", height = 2*4, width = 3*4)
+pdf("plot_results_lav_blav_TLI_2.pdf", height = 2*4, width = 3*4)
 par(mfrow = c(2, 2)) 
 plot_results_lav_blav(data_lav_fit, data_blav_fit, miss_size = 0.3, miss_type = "tt", fit_index_lav = "tli_rejection_rate", 
                       fit_index_blav = "tli_rejection_rate_0C", timepoint = 2, power = 0.8, type1 = 0.05, title = "TLI")
@@ -829,6 +827,54 @@ plot_results_lav_blav(data_lav_fit, data_blav_fit, miss_size = 0.3, miss_type = 
                       fit_index_blav = "tli_rejection_rate_0C", timepoint = 2, power = 0.8, type1 = 0.05, title = "TLI")
 plot_results_lav_blav(data_lav_fit, data_blav_fit, miss_size = 0.6, miss_type = "tt1", fit_index_lav = "tli_rejection_rate", 
                       fit_index_blav = "tli_rejection_rate_0C", timepoint = 2, power = 0.8, type1 = 0.05, title = "TLI")
+dev.off()
+
+pdf("plot_results_lav_blav_TLI_1.pdf", height = 2*4, width = 3*4)
+par(mfrow = c(2, 2)) 
+plot_results_lav_blav(data_lav_fit, data_blav_fit, miss_size = 0.3, miss_type = "tt", fit_index_lav = "tli_rejection_rate", 
+                      fit_index_blav = "tli_rejection_rate_0C", timepoint = 1, power = 0.8, type1 = 0.05, title = "TLI")
+plot_results_lav_blav(data_lav_fit, data_blav_fit, miss_size = 0.6, miss_type = "tt", fit_index_lav = "tli_rejection_rate", 
+                      fit_index_blav = "tli_rejection_rate_0C", timepoint = 1, power = 0.8, type1 = 0.05, title = "TLI")
+plot_results_lav_blav(data_lav_fit, data_blav_fit, miss_size = 0.3, miss_type = "tt1", fit_index_lav = "tli_rejection_rate", 
+                      fit_index_blav = "tli_rejection_rate_0C", timepoint = 1, power = 0.8, type1 = 0.05, title = "TLI")
+plot_results_lav_blav(data_lav_fit, data_blav_fit, miss_size = 0.6, miss_type = "tt1", fit_index_lav = "tli_rejection_rate", 
+                      fit_index_blav = "tli_rejection_rate_0C", timepoint = 1, power = 0.8, type1 = 0.05, title = "TLI")
+dev.off()
+
+pdf("plot_results_lav_blav_TLI_5.pdf", height = 2*4, width = 3*4)
+par(mfrow = c(2, 2)) 
+plot_results_lav_blav(data_lav_fit, data_blav_fit, miss_size = 0.3, miss_type = "tt", fit_index_lav = "tli_rejection_rate", 
+                      fit_index_blav = "tli_rejection_rate_0C", timepoint = 5, power = 0.8, type1 = 0.05, title = "TLI")
+plot_results_lav_blav(data_lav_fit, data_blav_fit, miss_size = 0.6, miss_type = "tt", fit_index_lav = "tli_rejection_rate", 
+                      fit_index_blav = "tli_rejection_rate_0C", timepoint = 5, power = 0.8, type1 = 0.05, title = "TLI")
+plot_results_lav_blav(data_lav_fit, data_blav_fit, miss_size = 0.3, miss_type = "tt1", fit_index_lav = "tli_rejection_rate", 
+                      fit_index_blav = "tli_rejection_rate_0C", timepoint = 5, power = 0.8, type1 = 0.05, title = "TLI")
+plot_results_lav_blav(data_lav_fit, data_blav_fit, miss_size = 0.6, miss_type = "tt1", fit_index_lav = "tli_rejection_rate", 
+                      fit_index_blav = "tli_rejection_rate_0C", timepoint = 5, power = 0.8, type1 = 0.05, title = "TLI")
+dev.off()
+
+pdf("plot_results_lav_blav_TLI_10.pdf", height = 2*4, width = 3*4)
+par(mfrow = c(2, 2)) 
+plot_results_lav_blav(data_lav_fit, data_blav_fit, miss_size = 0.3, miss_type = "tt", fit_index_lav = "tli_rejection_rate", 
+                      fit_index_blav = "tli_rejection_rate_0C", timepoint = 10, power = 0.8, type1 = 0.05, title = "TLI")
+plot_results_lav_blav(data_lav_fit, data_blav_fit, miss_size = 0.6, miss_type = "tt", fit_index_lav = "tli_rejection_rate", 
+                      fit_index_blav = "tli_rejection_rate_0C", timepoint = 10, power = 0.8, type1 = 0.05, title = "TLI")
+plot_results_lav_blav(data_lav_fit, data_blav_fit, miss_size = 0.3, miss_type = "tt1", fit_index_lav = "tli_rejection_rate", 
+                      fit_index_blav = "tli_rejection_rate_0C", timepoint = 10, power = 0.8, type1 = 0.05, title = "TLI")
+plot_results_lav_blav(data_lav_fit, data_blav_fit, miss_size = 0.6, miss_type = "tt1", fit_index_lav = "tli_rejection_rate", 
+                      fit_index_blav = "tli_rejection_rate_0C", timepoint = 10, power = 0.8, type1 = 0.05, title = "TLI")
+dev.off()
+
+pdf("plot_results_lav_blav_TLI_15.pdf", height = 2*4, width = 3*4)
+par(mfrow = c(2, 2)) 
+plot_results_lav_blav(data_lav_fit, data_blav_fit, miss_size = 0.3, miss_type = "tt", fit_index_lav = "tli_rejection_rate", 
+                      fit_index_blav = "tli_rejection_rate_0C", timepoint = 15, power = 0.8, type1 = 0.05, title = "TLI")
+plot_results_lav_blav(data_lav_fit, data_blav_fit, miss_size = 0.6, miss_type = "tt", fit_index_lav = "tli_rejection_rate", 
+                      fit_index_blav = "tli_rejection_rate_0C", timepoint = 15, power = 0.8, type1 = 0.05, title = "TLI")
+plot_results_lav_blav(data_lav_fit, data_blav_fit, miss_size = 0.3, miss_type = "tt1", fit_index_lav = "tli_rejection_rate", 
+                      fit_index_blav = "tli_rejection_rate_0C", timepoint = 15, power = 0.8, type1 = 0.05, title = "TLI")
+plot_results_lav_blav(data_lav_fit, data_blav_fit, miss_size = 0.6, miss_type = "tt1", fit_index_lav = "tli_rejection_rate", 
+                      fit_index_blav = "tli_rejection_rate_0C", timepoint = 15, power = 0.8, type1 = 0.05, title = "TLI")
 dev.off()
 
 
@@ -854,7 +900,7 @@ plot_results_null_models = function(df, miss_size, miss_type, fit_index_0A, fit_
   
   plot(sort(log(df$n_p[condition_missfit])), df[condition_missfit , fit_index_0A][rank(df$n_p[condition_missfit])], ylim = c(0, 1), 
        xlim = log(c(min(df$n_p), max(df$n_p))), col = "lightskyblue", pch = 1, type = "b",
-       axes = F, xlab = "N", ylab = "", main = paste(title, miss_type, miss_size, "Timepoints:", timepoint))
+       axes = F, xlab = "N", ylab = "", main = paste(title, miss_type, miss_size, "time points:", timepoint))
   
   par(new = T)
   plot(sort(log(df$n_p[condition_none])), df[condition_none , fit_index_0A][rank(df$n_p[condition_none])], ylim = c(0, 1), 
@@ -910,6 +956,18 @@ plot_results_null_models(data_blav_fit, miss_size = 0.3, miss_type = "tt1", fit_
 plot_results_null_models(data_blav_fit, miss_size = 0.3, miss_type = "tt", fit_index_0A = "tli_rejection_rate_0A", fit_index_0C = "tli_rejection_rate_0C", timepoint = 5, power = .80, title = "TLI")
 plot_results_null_models(data_blav_fit, miss_size = 0.3, miss_type = "tt", fit_index_0A = "tli_rejection_rate_0A", fit_index_0C = "tli_rejection_rate_0C", timepoint = 10, power = .80, title = "TLI")
 plot_results_null_models(data_blav_fit, miss_size = 0.3, miss_type = "tt", fit_index_0A = "tli_rejection_rate_0A", fit_index_0C = "tli_rejection_rate_0C", timepoint = 15, power = .80, title = "TLI")
+dev.off()
+
+
+
+pdf("power_type1_0.6_null_models_blav_3.pdf", height = 2*4, width = 3*4) # create PDF
+par(mfrow = c(2, 3))
+plot_results_null_models(data_blav_fit, miss_size = 0.6, miss_type = "tt1", fit_index_0A = "cfi_rejection_rate_0A", fit_index_0C = "cfi_rejection_rate_0C",  timepoint = 3, power = .80, title = "CFI")
+plot_results_null_models(data_blav_fit, miss_size = 0.6, miss_type = "tt1", fit_index_0A = "tli_rejection_rate_0A", fit_index_0C = "tli_rejection_rate_0C", timepoint = 3, power = .80, title = "TLI")
+plot_results_null_models(data_blav_fit, miss_size = 0.6, miss_type = "tt1", fit_index_0A = "nfi_rejection_rate_0A", fit_index_0C = "nfi_rejection_rate_0C", timepoint = 3, power = .80, title = "NFI")
+plot_results_null_models(data_blav_fit, miss_size = 0.6, miss_type = "tt", fit_index_0A = "cfi_rejection_rate_0A", fit_index_0C = "cfi_rejection_rate_0C", timepoint = 3, power = .80, title = "CFI")
+plot_results_null_models(data_blav_fit, miss_size = 0.6, miss_type = "tt", fit_index_0A = "tli_rejection_rate_0A", fit_index_0C = "tli_rejection_rate_0C", timepoint = 3, power = .80, title = "TLI")
+plot_results_null_models(data_blav_fit, miss_size = 0.6, miss_type = "tt", fit_index_0A = "nfi_rejection_rate_0A", fit_index_0C = "nfi_rejection_rate_0C", timepoint = 3, power = .80, title = "NFI")
 dev.off()
 
 
@@ -1041,7 +1099,6 @@ table_min_sample_pow_typ1 = function(df, fit_index, power = 0.8, type1 = 0.05) {
 }
 
   
-levels(data_lav_fit$n_t_f)
 
 result_table_power_type1_pval_lav = table_min_sample_pow_typ1(data_lav_fit, fit_index = "pvalue_rejection_rate")
 result_table_power_type1_rmsea_lav = table_min_sample_pow_typ1(data_lav_fit, fit_index = "rmsea_rejection_rate")
@@ -1050,8 +1107,8 @@ result_table_power_type1_chisq_lav = table_min_sample_pow_typ1(data_lav_fit, fit
 
 # print(result_table_power_type1_pval_lav)
 # print(result_table_power_type1_rmsea_lav)
-print(result_table_power_type1_tli_lav)
-print(result_table_power_type1_chisq_lav)
+write.csv(result_table_power_type1_tli_lav, "result_table_power_type1_tli_lav.txt")
+# print(result_table_power_type1_chisq_lav)
 
 
 result_table_power_type1_brmsea_blav = table_min_sample_pow_typ1(data_blav_fit, fit_index = "brmsea_rejection_rate")
@@ -1059,7 +1116,7 @@ result_table_power_type1_tli_blav = table_min_sample_pow_typ1(data_blav_fit, fit
 result_table_power_type1_cfi_blav = table_min_sample_pow_typ1(data_blav_fit, fit_index = "cfi_rejection_rate_0C")
 
 # print(result_table_power_type1_brmsea_blav)
-print(result_table_power_type1_tli_blav)
+write.csv(result_table_power_type1_tli_blav, "result_table_power_type1_tli_blav.txt")
 # print(result_table_power_type1_cfi_blav)
 
 
