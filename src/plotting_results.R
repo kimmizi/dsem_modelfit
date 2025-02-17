@@ -10,9 +10,13 @@ library(dplyr)
 library(tidyr)
 
 
-#current_dir = "/Users/kimzierahn/PycharmProjects/dsem_modelfit/exp/2025-01-25-final"
-#current_dir = "/Users/kimzierahn/PycharmProjects/dsem_modelfit/exp/2025-01-27"
-current_dir = "~/Desktop/runs_until_28_morning.nosync"
+# # Kim's dir
+# #current_dir = "/Users/kimzierahn/PycharmProjects/dsem_modelfit/exp/2025-01-25-final"
+# #current_dir = "/Users/kimzierahn/PycharmProjects/dsem_modelfit/exp/2025-01-27"
+# current_dir = "~/Desktop/runs_until_28_morning.nosync"
+
+# #Mihai's dir
+current_dir = "C:/Users/mihai/Documents/Faculta/Research Project/dsem_modelfit/exp"
 folders = c("2025-01-26", "2025-01-27", "2025-01-28")
 
 setwd(current_dir)
