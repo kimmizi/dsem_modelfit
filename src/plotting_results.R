@@ -13,10 +13,10 @@ library(tidyr)
 # # Kim's dir
 # #current_dir = "/Users/kimzierahn/PycharmProjects/dsem_modelfit/exp/2025-01-25-final"
 # #current_dir = "/Users/kimzierahn/PycharmProjects/dsem_modelfit/exp/2025-01-27"
-# current_dir = "~/Desktop/runs_until_28_morning.nosync"
+current_dir = "~/Desktop/runs_until_28_morning.nosync"
 
 # #Mihai's dir
-current_dir = "C:/Users/mihai/Documents/Faculta/Research Project/dsem_modelfit/exp"
+# current_dir = "C:/Users/mihai/Documents/Faculta/Research Project/dsem_modelfit/exp"
 folders = c("2025-01-26", "2025-01-27", "2025-01-28")
 
 setwd(current_dir)
@@ -75,7 +75,7 @@ fitnom_blavaan_red = c(
   "brmsea_rejection_rate",               # Percentage of BRMSEA >= 0.05
   "bgammahat_rejection_rate",            # Percentage of BGammaHat <= 0.95
   "adjbgammahat_rejection_rate",         # Percentage of adjBGammaHat <= 0.95
-  "bmc_rejection_rate"                  # Percentage of BMc <= 0.95
+  "bmc_rejection_rate"                   # Percentage of BMc <= 0.95
 )
 
 
@@ -264,6 +264,16 @@ data_blav_fit$Type_misfit = as.factor(data_blav_fit$Type_misfit)
 # Plotting 
 ################################################################################
 
+# save csvs
+current_dir = "/Users/kimzierahn/Desktop/runs_until_28_morning.nosync/plots_mar/data_lav_fit.csv"
+write.csv(data_lav_fit, current_dir)
+current_dir = "/Users/kimzierahn/Desktop/runs_until_28_morning.nosync/plots_mar/data_blav_fit.csv"
+write.csv(data_blav_fit, current_dir)
+
+current_dir = "/Users/kimzierahn/Desktop/runs_until_28_morning.nosync/plots_mar"
+setwd(current_dir)
+
+
 #### Plot version 1 ####
 # X-Axis: N_p (log-scaled)
 # Y-Axis: % rejected
@@ -304,7 +314,6 @@ plot_results = function(df, miss_size, miss_type, fit_index, power = 0.8, title)
   }
 }
 
-data_lav_fit$Type_misfit
 
 #### LAVAAN ####
 pdf("type1error01_lav.pdf", height = 3*4, width = 2*4) # create PDF
