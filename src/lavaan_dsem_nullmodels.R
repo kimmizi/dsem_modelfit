@@ -126,68 +126,65 @@ null_model_0C <- function(timepoints) {
 #########################################################
 #### null model 0A ####
 # variables are uncorrelated across time points
-# invariant intercepts and residual variances
+# intercepts and residual variances constrained to be equal over time
 #########################################################
 
 null_model_0A <- function(timepoints) {
-  model <- ""
+  model <- ''
   
-  # Define variances and intercepts for all timepoints
-  for (t in 1:timepoints) {
+  # Define intercepts (constrained to be equal across time)
+  model <- paste0(model, '
+    # Intercepts
+    y1t1 ~ int_y1 * 1
+    y2t1 ~ int_y2 * 1
+    y3t1 ~ int_y3 * 1
+    y4t1 ~ int_y4 * 1
+    y5t1 ~ int_y5 * 1
+    y6t1 ~ int_y6 * 1
+  ')
+  
+  # Constrain intercepts to be equal across time points
+  for (t in 2:timepoints) {
     model <- paste0(model, '
-      y1t', t, ' ~~ y1t', t, '
-      y2t', t, ' ~~ y2t', t, '
-      y3t', t, ' ~~ y3t', t, '
-      y4t', t, ' ~~ y4t', t, '
-      y5t', t, ' ~~ y5t', t, '
-      y6t', t, ' ~~ y6t', t, '\n 
-      '
-                    )
+      y1t', t, ' ~ int_y1 * 1
+      y2t', t, ' ~ int_y2 * 1
+      y3t', t, ' ~ int_y3 * 1
+      y4t', t, ' ~ int_y4 * 1
+      y5t', t, ' ~ int_y5 * 1
+      y6t', t, ' ~ int_y6 * 1
+    ')
   }
   
-  # Add covariance constraints only if timepoints > 1
-  if (timepoints > 1) {
-    for (t in 1:timepoints) {
-      model <- paste0(model, '
-      y1t', t, ' ~ 1*1', '
-      y2t', t, ' ~ 1*1', '
-      y3t', t, ' ~ 1*1', '
-      y4t', t, ' ~ 1*1', '
-      y5t', t, ' ~ 1*1', '
-      y6t', t, ' ~ 1*1', '\n
-      '
-      )
-    }
-    
-    for (v in 1:6) { # Loop over variables y1 to y6
-      var_name <- paste0("y", v, "t") # Append "t" to indicate timepoint
-      for (t in 1:(timepoints - 1)) { # Loop over time points
-        next_time <- t + 1
-        model <- paste0(model, 
-                        sprintf("%s%d ~~ 0.5*%s%d\n", var_name, t, var_name, next_time))
-      }
-    }
-  }
+  # Define residual variances (constrained to be equal across time)
+  model <- paste0(model, '
+    # Residual variances
+    y1t1 ~~ res_y1 * y1t1
+    y2t1 ~~ res_y2 * y2t1
+    y3t1 ~~ res_y3 * y3t1
+    y4t1 ~~ res_y4 * y4t1
+    y5t1 ~~ res_y5 * y5t1
+    y6t1 ~~ res_y6 * y6t1
+  ')
   
-  # Add intercept constraints only if timepoints > 1
-  if (timepoints > 1) {
-    for (t in 1:(timepoints - 1)) {
-      model <- paste(model, sprintf('
-        y1t%d ~ 1*y1t%d
-        y2t%d ~ 1*y2t%d
-        y3t%d ~ 1*y3t%d
-        y4t%d ~ 1*y4t%d
-        y5t%d ~ 1*y5t%d
-        y6t%d ~ 1*y6t%d
-      ', t, t + 1, t, t + 1, t, t + 1, t, t + 1, t, t + 1, t, t + 1), sep = "\n")
-    }
+  # Constrain residual variances to be equal across time points
+  for (t in 2:timepoints) {
+    model <- paste0(model, '
+      y1t', t, ' ~~ res_y1 * y1t', t, '
+      y2t', t, ' ~~ res_y2 * y2t', t, '
+      y3t', t, ' ~~ res_y3 * y3t', t, '
+      y4t', t, ' ~~ res_y4 * y4t', t, '
+      y5t', t, ' ~~ res_y5 * y5t', t, '
+      y6t', t, ' ~~ res_y6 * y6t', t, '
+    ')
   }
   
   return(model)
 }
 
-nullmodel_0A <- try(bsem(null_model_0A(2), data = y0, 
+
+nullmodel_0A <- try(bsem(null_model_0A(Timepoints), ydat2, 
                          n.chains = 4, burnin = 1000, sample = 1000), silent = F)
+summary(nullmodel_0A)
 
 
 
