@@ -9,6 +9,7 @@ library(rstan)
 rstan_options(auto_write = TRUE)
 options(mc.cores = parallel::detectCores())
 
+setwd("/Users/kimzierahn/PycharmProjects/dsem_modelfit/src")
 
 
 
@@ -125,8 +126,15 @@ fitm_blavaan[1, ] <- fit_bl
 
 ## fit null model to calculate CFI
 
-fit_conv_inv <- bsem(configural_invariance_model(Timepoints), ydat2, 
-                 n.chains = 4, burnin = 1000, sample = 1000)
+fit_0A <- bsem(null_model_0A(Timepoints), ydat2, 
+               n.chains = 4, burnin = 1000, sample = 1000)
+summary(fit_0A)
+
+fit_0C <- bsem(null_model_0C(Timepoints), ydat2, 
+               n.chains = 4, burnin = 1000, sample = 1000)
+summary(fit_0C)
+
+
 
 #fit_weak_inv <- bsem(weak_invariance_model(Timepoints), ydat2, 
 #                     n.chains = 4, burnin = 1000, sample = 1000)
