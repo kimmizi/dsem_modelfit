@@ -683,7 +683,7 @@ for (i_pers in seq_along(N_p)) {
               #fitm_stan <- matrix(NA, N_sim_samples, length(fitnom_stan))
               
               #set core specific seed right before gendata
-              set.seed(24032024+rslurm_id+n_p)
+              set.seed(12051994+rslurm_id+n_p)
               temp_dat <- generate_temp_data(Type_misfit, n_p, n_t, phi0, mu0, ar0, ly0, ly1, td)
               ydat <- temp_dat$y # use array version of data for stan
               ydat2 <- temp_dat$y0 # use the transformed version in the getfit function
