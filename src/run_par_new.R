@@ -6,7 +6,7 @@
 # 3. For each seed, we have a new gendata, new sim
 # 4. Somehow saves each run in a separate file
 
-debugging_mode = "LOCAL" #"LOCAL"
+debugging_mode = "SERVER" #"LOCAL" #"LOCAL"
 
 
 
