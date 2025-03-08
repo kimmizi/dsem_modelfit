@@ -75,81 +75,73 @@ source(file.path(current_dir,  "lavaan_dsem_nullmodels.R"))
 # so a workload is basically a list of dsem model conditions to run. We suspect running N_t=2001 x  N_p =15 is equal to running a few smaller conditions
 workloads <- list(
   sim_1 = list(
-    total_workload = 30015,
+    total_workload = 37515,
     combinations = data.frame(
       timepoint = c(15),
-      person_size = c(2001)
+      person_size = c(2501)
     )
   ),
   sim_2 = list(
-    total_workload = 22515,
+    total_workload = 31132,
     combinations = data.frame(
-      timepoint = c(15),
-      person_size = c(1501)
+      timepoint = c(15, 5, 1, 1),
+      person_size = c(2001, 151, 211, 151)
     )
   ),
   sim_3 = list(
-    total_workload = 20616,
+    total_workload = 31067,
     combinations = data.frame(
-      timepoint = c(10, 3, 2, 1),
-      person_size = c(2001, 121, 91, 61)
+      timepoint = c(10, 15, 3, 5, 3, 1),
+      person_size = c(2501, 211, 501, 181, 151, 31)
     )
   ),
   sim_4 = list(
-    total_workload = 20593,
+    total_workload = 31067,
     combinations = data.frame(
-      timepoint = c(15, 10, 1, 4, 1, 2),
-      person_size = c(1001, 211, 2001, 181, 501, 121)
+      timepoint = c(15, 2, 4, 1, 4, 1),
+      person_size = c(1501, 2501, 501, 1001, 121, 61)
     )
   ),
   sim_5 = list(
-    total_workload = 20576,
+    total_workload = 31112,
     combinations = data.frame(
-      timepoint = c(10, 2, 5, 5, 3, 1),
-      person_size = c(1501, 1501, 211, 151, 181, 211)
+      timepoint = c(10, 10, 3, 1, 4, 3, 1),
+      person_size = c(2001, 501, 1001, 2001, 151, 121, 121)
     )
   ),
   sim_6 = list(
-    total_workload = 20623,
+    total_workload = 31043,
     combinations = data.frame(
-      timepoint = c(10, 3, 3, 1, 1, 2, 2, 1),
-      person_size = c(1001, 1501, 1001, 1501, 1001, 181, 61, 121)
+      timepoint = c(15, 3, 4, 1, 5, 3, 2),
+      person_size = c(1001, 2501, 1001, 2501, 211, 181, 211)
     )
   ),
   sim_7 = list(
-    total_workload = 20588,
+    total_workload = 31084,
     combinations = data.frame(
-      timepoint = c(5, 5, 5, 3, 5, 3, 1, 1),
-      person_size = c(2001, 1001, 501, 501, 181, 151, 181, 31)
+      timepoint = c(10, 5, 3, 10, 2, 1, 2, 1),
+      person_size = c(1501, 1501, 1501, 211, 501, 501, 181, 91)
     )
   ),
   sim_8 = list(
-    total_workload = 20621,
+    total_workload = 31136,
     combinations = data.frame(
-      timepoint = c(4, 10, 4, 2, 4, 4, 3),
-      person_size = c(2001, 501, 1001, 1001, 211, 121, 91)
+      timepoint = c(5, 15, 5, 2, 10, 4, 3, 2),
+      person_size = c(2501, 501, 1001, 1501, 181, 211, 91, 91)
     )
   ),
   sim_9 = list(
-    total_workload = 20595,
+    total_workload = 31138,
     combinations = data.frame(
-      timepoint = c(15, 3, 15, 4, 2, 4, 2),
-      person_size = c(501, 2001, 211, 501, 501, 151, 151)
+      timepoint = c(10, 4, 4, 2, 2, 3, 2, 1),
+      person_size = c(1001, 2001, 1501, 2001, 1001, 211, 151, 181)
     )
   ),
   sim_10 = list(
-    total_workload = 20618,
+    total_workload = 31106,
     combinations = data.frame(
-      timepoint = c(5, 4, 2, 10, 3, 2, 1, 1),
-      person_size = c(1501, 1501, 2001, 181, 211, 211, 151, 91)
-    )
-  ),
-  # this last one is a testing one. Notice that we expect the cond 1x31 to not fit, and 2x91 to fit.
-  sim_11 = list(
-    total_workload = 20618,
-    combinations = data.frame(
-      timepoint = c(1, 2),
-      person_size = c(31, 91)
+      timepoint = c(5, 4, 3, 5, 1, 4, 2, 2),
+      person_size = c(2001, 2501, 2001, 501, 1501, 181, 121, 61)
     )
   )
 )
