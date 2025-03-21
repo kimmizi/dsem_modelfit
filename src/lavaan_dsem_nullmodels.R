@@ -38,18 +38,19 @@ null_model_0C <- function(timepoints) {
 
 null_model_0A <- function(timepoints) {
   model <- ''
-  
-  # Define variances
-  for (t in 1:timepoints) {
-    model <- paste0(model, '
-      y1t', t, ' ~~ y1t', t, '
-      y2t', t, ' ~~ y2t', t, '
-      y3t', t, ' ~~ y3t', t, '
-      y4t', t, ' ~~ y4t', t, '
-      y5t', t, ' ~~ y5t', t, '
-      y6t', t, ' ~~ y6t', t, '
-      ')
-  }
+
+  # commented out this as the variances get defined again later and two definitions raise error in blavaan  
+  # # Define variances
+  # for (t in 1:timepoints) {
+  #   model <- paste0(model, '
+  #     y1t', t, ' ~~ y1t', t, '
+  #     y2t', t, ' ~~ y2t', t, '
+  #     y3t', t, ' ~~ y3t', t, '
+  #     y4t', t, ' ~~ y4t', t, '
+  #     y5t', t, ' ~~ y5t', t, '
+  #     y6t', t, ' ~~ y6t', t, '
+  #     ')
+  # }
   
   # Define intercepts
   model <- paste0(model, '

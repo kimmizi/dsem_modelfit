@@ -6,7 +6,7 @@
 # 3. For each seed, we have a new gendata, new sim
 # 4. Somehow saves each run in a separate file
 
-debugging_mode = "SERVER" #"LOCAL" #"LOCAL"
+debugging_mode = "SERVER" #"LOCAL"
 
 
 
@@ -53,8 +53,8 @@ if(debugging_mode != "LOCAL"){
   
 }else{
   # ONLY FOR LOCAL USE
-  #current_dir = "C:/Users/mihai/Documents/Faculta/Research Project/dsem_modelfit/src"
-  current_dir = "/Users/kimzierahn/PycharmProjects/dsem_modelfit/src"
+  current_dir = "C:/Users/mihai/Documents/Faculta/Research Project/dsem_modelfit/src"
+  #current_dir = "/Users/kimzierahn/PycharmProjects/dsem_modelfit/src"
 }
 
 
@@ -135,6 +135,13 @@ workloads <- list(
     combinations = data.frame(
       timepoint = c(10, 4, 4, 2, 2, 3, 2, 1),
       person_size = c(1001, 2001, 1501, 2001, 1001, 211, 151, 181)
+    )
+  ),
+  sim_11 = list(
+    total_workload = 31138,
+    combinations = data.frame(
+      timepoint = c(2, 4),
+      person_size = c(91, 31)
     )
   ),
   sim_10 = list(
@@ -398,6 +405,42 @@ generate_temp_data <- function(Type_crossloading, N_pers, N_timep, phi0, mu0, ar
 }
 
 
+### Diagnositc function to check why model 0A returns NA ########################
+# Function to save model details to a file
+save_model_details <- function(model_fit, file_path) {
+  details <- list()
+  
+  # If the model fit returned an error, capture the error message.
+  if (inherits(model_fit, "try-error")) {
+    details$Error_Message <- as.character(model_fit)
+  } else {
+    # Capture the model summary
+    details$Model_Summary <- capture.output(summary(model_fit))
+    
+    # Capture convergence diagnostics from blavInspect
+    details$Convergence <- capture.output(blavInspect(model_fit, "converged"))
+    
+    # Capture parameter estimates (if available)
+    details$Parameters <- capture.output(print(coef(model_fit)))
+    
+    # If using a Bayesian model, capture the MCMC diagnostics (R-hat, effective sample sizes, etc.)
+    # This example assumes the use of rstan::summary() on the stanfit object extracted from model_fit.
+    if (!is.null(model_fit@external$mcmc)) {
+      stan_fit <- model_fit@external$mcmc
+      details$Stan_Diagnostics <- capture.output(summary(stan_fit))
+    }
+  }
+  
+  # Combine all details into one informative message
+  combined_details <- paste(sapply(names(details), function(name) {
+    paste0("### ", name, " ###\n", paste(details[[name]], collapse = "\n"), "\n")
+  }), collapse = "\n")
+  
+  # Save the combined details to the specified file path
+  writeLines(combined_details, con = file_path)
+  
+  cat("Model details saved to:", file_path, "\n")
+}
 
 ### LAVAAN ###
 # Helper function to fit a single model, capture fit specific errors for later
@@ -436,6 +479,10 @@ fit_model_blav <- function(y0, N_timep){
   cat("Fitting null model 0A...\n")
   nullmodel_0A <- try(bsem(null_model_0A(N_timep), data = y0, 
                            n.chains = 4, burnin = 1000, sample = 1000), silent = TRUE)
+  
+  # Specify a file name that includes simulation index or timestamp for clarity
+  #diagnostics_file <- paste0("model_diagnostics_nullmodel_0A_", Sys.Date(), ".txt")
+  #save_model_details(nullmodel_0A, diagnostics_file)
   
   # Fit null model 0C
   cat("Fitting null model 0C...\n")
@@ -593,6 +640,10 @@ N_t <- c(1:3) # N_timep
 # Workload specific conditions
 N_t <- current_sim$combinations$timepoint
 N_p <- current_sim$combinations$person_size
+
+N_t <- c(1:5,10,15)
+N_p <-c(31,61,91,121,151,181,211,501,1001,1501,2001,2501)
+
 cat("Workload N_p:", N_p, "\n")
 cat("Workload N_t:", N_t, "\n")
 
@@ -646,7 +697,7 @@ for (i_pers in seq_along(N_p)) {
     n_t<- N_t[i_timep]
     
     # if condition: match pos i of N_pers to pos i of N_timep. This is needed for workloads
-    if(i_pers == i_timep){
+    #if(i_pers == i_timep){
       print(paste("Matching position:", i_pers, "-> N_p:", n_p, "N_t:", n_t))
       
       # Check theoretical specification requirement
@@ -668,28 +719,28 @@ for (i_pers in seq_along(N_p)) {
               
               # Initialize factor loadings for the current condition
               ly1 <- initialize_ly1(Type_misfit, Size_misfit)
-              
-              # Initialize empty matrix to store fit indices. 
+
+              # Initialize empty matrix to store fit indices.
               fitm_lavaan <- matrix(NA, N_sim_samples, length(fitnom_lavaan))
               fitm_blavaan <- matrix(NA, N_sim_samples, length(fitnom_blavaan))
               #fitm_stan <- matrix(NA, N_sim_samples, length(fitnom_stan))
-              
+
               #set core specific seed right before gendata
               set.seed(12051994+rslurm_id+n_p)
               temp_dat <- generate_temp_data(Type_misfit, n_p, n_t, phi0, mu0, ar0, ly0, ly1, td)
               ydat <- temp_dat$y # use array version of data for stan
               ydat2 <- temp_dat$y0 # use the transformed version in the getfit function
-              
+
               # Check if data is positive definite and fit models
               if (temp_dat[["is_positive_def"]]) {
                 y0 <- temp_dat[["y0"]]
-                
+
                 # Lavaan
                 fitm_lavaan[sample, ] <- fit_model_lav(ydat2, n_t) # Fit model and store results
-                
+
                 # Blavaan
                 fitm_blavaan[sample, ] <- fit_model_blav(ydat2, n_t) # Fit model and store results
-                
+
                 # Stan
                 #fitm_stan[sample, ] <- as.numeric(fit_model_stan(ydat, ydat2, n_t, n_p)) # Fit model and store results
               } # end if pos definite, fit models
@@ -710,28 +761,28 @@ for (i_pers in seq_along(N_p)) {
             if (!dir.exists(save_dir)) {
               dir.create(save_dir, recursive = TRUE)
             }
-            
+
             # test
             #exp_name <- paste("test", n_p, n_t, idk, "lav_blav", ".csv", sep='_')
             # csv_path_test <- file.path(save_dir, exp_name)
             # write.csv(random_numbers, file=csv_path_test, row.names = FALSE)
-            
+
             # actual
             exp_name_lav <- paste("dsem", n_p, n_t, rslurm_id, Type_misfit, Size_misfit, "lav", ".csv", sep='_')
             exp_name_blav <- paste("dsem", n_p, n_t, rslurm_id, Type_misfit, Size_misfit, "blav", ".csv", sep='_')
-            
+
             csv_path_lavaan <- file.path(save_dir, exp_name_lav)
             write.csv(fitm_lavaan, file = csv_path_lavaan, row.names = FALSE)
             csv_path_blavaan <- file.path(save_dir, exp_name_blav)
             write.csv(fitm_blavaan, file = csv_path_blavaan, row.names = FALSE)
-            
+
           } # end if selecting 5 model conditions from 9 possible
         } #end loop over misfit size
       } #end loop over misfit type
-    } #end condition for correct workload spec. Sligt redundancy, but O(1)
+    #} #end condition for correct workload spec. Sligt redundancy, but O(1)
   } #end loop over N_t
 } #end loop over N_p
 
-cat("finished worker number ", rslurm_id, "from Workload", sim_num)
+#cat("finished worker number ", rslurm_id, "from Workload", sim_num)
 
 
