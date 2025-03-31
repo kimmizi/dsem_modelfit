@@ -1,10 +1,7 @@
 # run_par_new.R
 
-# Plan: 
-# 1. Initialise everything inside the file so that there are no problems with the parallel workers (this should work indep of part 2)
-# 2. Each file gets a seed from the slurm bash file
-# 3. For each seed, we have a new gendata, new sim
-# 4. Somehow saves each run in a separate file
+# This file runs the simulations for all DSEM conditions.
+# Authors: Mihai Falcusan, Kim Zierahn
 
 debugging_mode = "SERVER" #"LOCAL"
 
@@ -18,12 +15,8 @@ library(matrixcalc)
 library(lavaan)
 library(blavaan)
 library(rstan)
-# I think this is so that rstan and blavaan can operate efficiently. 
-# How might this interact with the other part of the simulation?
-rstan_options(auto_write = TRUE)
+
 options(mc.cores = parallel::detectCores())
-
-
 
 # 1.2. DSEM models ###########################################################################################
 
@@ -67,6 +60,11 @@ source(file.path(current_dir,  "lavaan_dsem_nullmodels.R"))
 
 
 # 1.3. Workload specifications ###############################################################################
+
+# A workload is a subset of simulation conditions that helped us with parallelisation. If one doesn't want to
+# use them, set init_workloads = FALSE.
+
+init_workloads = FALSE
 
 # Define all workloads directly in R. these were computed via simulation_workload_calculator.R
 # to have an approx. equal workload. when init one of 10 workloads via bash argument,
@@ -137,13 +135,6 @@ workloads <- list(
       person_size = c(1001, 2001, 1501, 2001, 1001, 211, 151, 181)
     )
   ),
-  sim_11 = list(
-    total_workload = 31138,
-    combinations = data.frame(
-      timepoint = c(2, 4),
-      person_size = c(91, 31)
-    )
-  ),
   sim_10 = list(
     total_workload = 31106,
     combinations = data.frame(
@@ -157,7 +148,7 @@ workloads <- list(
 
 # 1.4. Helper functions ################################################################################
 
-# Function to initialize factor loadings
+#### Function to initialize factor loadings
 initialize_ly1 <- function(Type_misfit, Size_misfit) {
   if (Type_misfit == "tt") {
     return(matrix(c(0, 0, 0, Size_misfit, 0, 0,
@@ -391,7 +382,7 @@ gendata02 <- function(N, Nt, phi0, mu0, ar0, ly0, ly1, td){
 
 
 
-# Wrapper function for the previous two to initialize simulation specific data set
+#### Wrapper function for the previous two to initialize simulation specific data set
 generate_temp_data <- function(Type_crossloading, N_pers, N_timep, phi0, mu0, ar0, ly0, ly1, td) {
   if (Type_crossloading == "tt") {
     return(gendata01(N_pers, N_timep, phi0, mu0, ar0, ly0, ly1, td))
@@ -563,7 +554,7 @@ fit_model_blav <- function(y0, N_timep){
 
 
 
-### STAN ###
+### STAN ### (in case one wants to add stan equivalent of models)
 fit_model_stan <- function(ydat, ydat2, timepoints, person_size){ 
   
   # load and compile model
@@ -592,7 +583,7 @@ fit_model_stan <- function(ydat, ydat2, timepoints, person_size){
 
 
 
-# 2.1. Read from slurm bash file: workload, specific seed from array, core? #######################################
+# 2.1. Read from slurm bash file: workload, specific seed from array #######################################
 
 if(debugging_mode != "LOCAL"){
   #ONLY FOR CLUSTER USAGE
@@ -604,7 +595,7 @@ if(debugging_mode != "LOCAL"){
   sim_num <- as.numeric(args[1])
 }else{
   # ONLY FOR LOCAL USAGE
-  sim_num = 11 #always use 11 as a test condition
+  sim_num = 7
 }
 
 # Get current simulation workload
@@ -612,11 +603,8 @@ current_sim <- workloads[[paste0("sim_", sim_num)]]
 if (is.null(current_sim)) {
   stop(paste("No configuration found for simulation", sim_num))
 }
-#current_sim <- 4
 
-
-
-# 2.2. Test and make sure slurm unique_id and worloads are working ################################################
+# 2.2. Test and make sure slurm unique_id and workloads are working ################################################
 
 if(debugging_mode != "LOCAL"){
   # ONLY FOR CLUSTER USAGE
@@ -628,25 +616,14 @@ if(debugging_mode != "LOCAL"){
 }
 
 
-cat('rslurm_id=', rslurm_id, '\n')
-
-# Workload id
-cat("Workload_id =", sim_num, '\n')
-
-N_p <- c(91)
-N_t <- c(1:3) # N_timep
-
-
 # Workload specific conditions
 N_t <- current_sim$combinations$timepoint
 N_p <- current_sim$combinations$person_size
 
-N_t <- c(1:5,10,15)
-N_p <-c(31,61,91,121,151,181,211,501,1001,1501,2001,2501)
-
-cat("Workload N_p:", N_p, "\n")
-cat("Workload N_t:", N_t, "\n")
-
+if(init_workloads != TRUE){ #if not using workloads, just loop over all conditions
+  N_t <- c(1:5,10,15)
+  N_p <-c(31,61,91,121,151,181,211,501,1001,1501,2001,2501)
+}
 
 
 # 3.0 Global vars ##############################################################################################
@@ -659,7 +636,7 @@ Size_crossloading <- c(0,.3,.6)
 # What models to specify and run: within time points/ between time points
 Type_crossloading <- c("none","tt","tt1")
 # Number of data samples to generate and run model fit on them
-N_sim_samples <- 1 # because each unique slurm worker does 1
+N_sim_samples <- 1 # because for the cluster run, each unique worker just runs the conditions once
 
 # DSEM model params
 phi0 <- diag(2)*.7+.3  # cov(eta)
@@ -684,8 +661,8 @@ fitnom_blavaan <- c("npar", "PPP", "MargLogLik",
                     "BCFI_0C", "BTLI_0C", "BNFI_0C",
                     "BCFI_0A", "BTLI_0A", "BNFI_0A",
                     "chisq", "pd")
-fitnom_stan <- c("BRMSEA", "BGammahat", "adjBGammahat", 
-                 "BMc", "pd_1", "p_1", "loglik", "logliksat_1", "chisq")
+#fitnom_stan <- c("BRMSEA", "BGammahat", "adjBGammahat", 
+#                 "BMc", "pd_1", "p_1", "loglik", "logliksat_1", "chisq")
 
 
 
@@ -696,10 +673,7 @@ for (i_pers in seq_along(N_p)) {
     n_p <- N_p[i_pers] #small n_p because local variable (inside function)
     n_t<- N_t[i_timep]
     
-    # if condition: match pos i of N_pers to pos i of N_timep. This is needed for workloads
-    #if(i_pers == i_timep){
-      print(paste("Matching position:", i_pers, "-> N_p:", n_p, "N_t:", n_t))
-      
+    if (init_workloads != TRUE){
       # Check theoretical specification requirement
       if (n_t * 6 >= n_p) next
       for (Type_misfit in Type_crossloading) {
@@ -762,12 +736,7 @@ for (i_pers in seq_along(N_p)) {
               dir.create(save_dir, recursive = TRUE)
             }
 
-            # test
-            #exp_name <- paste("test", n_p, n_t, idk, "lav_blav", ".csv", sep='_')
-            # csv_path_test <- file.path(save_dir, exp_name)
-            # write.csv(random_numbers, file=csv_path_test, row.names = FALSE)
-
-            # actual
+            # file names
             exp_name_lav <- paste("dsem", n_p, n_t, rslurm_id, Type_misfit, Size_misfit, "lav", ".csv", sep='_')
             exp_name_blav <- paste("dsem", n_p, n_t, rslurm_id, Type_misfit, Size_misfit, "blav", ".csv", sep='_')
 
@@ -779,7 +748,87 @@ for (i_pers in seq_along(N_p)) {
           } # end if selecting 5 model conditions from 9 possible
         } #end loop over misfit size
       } #end loop over misfit type
-    #} #end condition for correct workload spec. Sligt redundancy, but O(1)
+    }else{
+    # if condition: match pos i of N_pers to pos i of N_timep. This is needed for workloads
+      if(i_pers == i_timep){
+      print(paste("Matching position:", i_pers, "-> N_p:", n_p, "N_t:", n_t))
+      # Check theoretical specification requirement
+        if (n_t * 6 >= n_p) next
+        for (Type_misfit in Type_crossloading) {
+          # Picking conditions. Since we are not interested in power, we just want
+          # to fit 1 model with no misfit & type none, and then foreach misfit type
+          # 1 with misfit size = 0.3, one 0.6.
+          for (Size_misfit in Size_crossloading) {
+            # if type tt or tt1, dont run size=0, else run
+            if(Size_misfit == 0 && Type_misfit != "none"){
+              #cat('skipped over misfit type:', Type_misfit, " and size:", Size_misfit, "\n")
+            }else if(Size_misfit != 0 && Type_misfit == "none"){
+              #cat('skipped over misfit type:', Type_misfit, " and size:", Size_misfit, "\n")
+            }else{ 
+              
+              #print(N_sim_samples)
+              for(sample in N_sim_samples){
+                
+                # Initialize factor loadings for the current condition
+                ly1 <- initialize_ly1(Type_misfit, Size_misfit)
+
+                # Initialize empty matrix to store fit indices.
+                fitm_lavaan <- matrix(NA, N_sim_samples, length(fitnom_lavaan))
+                fitm_blavaan <- matrix(NA, N_sim_samples, length(fitnom_blavaan))
+                #fitm_stan <- matrix(NA, N_sim_samples, length(fitnom_stan))
+
+                #set core specific seed right before gendata
+                set.seed(12051994+rslurm_id+n_p)
+                temp_dat <- generate_temp_data(Type_misfit, n_p, n_t, phi0, mu0, ar0, ly0, ly1, td)
+                ydat <- temp_dat$y # use array version of data for stan
+                ydat2 <- temp_dat$y0 # use the transformed version in the getfit function
+
+                # Check if data is positive definite and fit models
+                if (temp_dat[["is_positive_def"]]) {
+                  y0 <- temp_dat[["y0"]]
+
+                  # Lavaan
+                  fitm_lavaan[sample, ] <- fit_model_lav(ydat2, n_t) # Fit model and store results
+
+                  # Blavaan
+                  fitm_blavaan[sample, ] <- fit_model_blav(ydat2, n_t) # Fit model and store results
+
+                  # Stan
+                  #fitm_stan[sample, ] <- as.numeric(fit_model_stan(ydat, ydat2, n_t, n_p)) # Fit model and store results
+                } # end if pos definite, fit models
+              } # end loop over number of simulation samples
+              
+              # 4. 1 SAVE MODELS ##############################################################################################
+              
+              colnames(fitm_lavaan) <- fitnom_lavaan
+              colnames(fitm_blavaan) <- fitnom_blavaan
+              # #colnames(fitm_stan) <- fitnom_stan
+              # Move up one directory level to dsem_modelfit
+              parent_dir <- dirname(current_dir)
+              # Define the experiment name
+              Exp_day <- format(Sys.time(), "%Y-%m-%d") # Format: YYYY-MM-DD_HH-MM-SS
+              # Specify the save directory in dsem_modelfit/exp
+              save_dir <- file.path(parent_dir, "exp", Exp_day)
+              # Create the day directory if it does not exist
+              if (!dir.exists(save_dir)) {
+                dir.create(save_dir, recursive = TRUE)
+              }
+
+              # file names
+              exp_name_lav <- paste("dsem", n_p, n_t, rslurm_id, Type_misfit, Size_misfit, "lav", ".csv", sep='_')
+              exp_name_blav <- paste("dsem", n_p, n_t, rslurm_id, Type_misfit, Size_misfit, "blav", ".csv", sep='_')
+
+              csv_path_lavaan <- file.path(save_dir, exp_name_lav)
+              write.csv(fitm_lavaan, file = csv_path_lavaan, row.names = FALSE)
+              csv_path_blavaan <- file.path(save_dir, exp_name_blav)
+              write.csv(fitm_blavaan, file = csv_path_blavaan, row.names = FALSE)
+
+            } # end if selecting 5 model conditions from 9 possible
+          } #end loop over misfit size
+        } #end loop over misfit type          
+      } 
+
+    } #end if workloads y/n 
   } #end loop over N_t
 } #end loop over N_p
 
