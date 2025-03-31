@@ -13,13 +13,12 @@ library(tidyr)
 # # Kim's dir
 # #current_dir = "/Users/kimzierahn/PycharmProjects/dsem_modelfit/exp/2025-01-25-final"
 # #current_dir = "/Users/kimzierahn/PycharmProjects/dsem_modelfit/exp/2025-01-27"
-#current_dir = "~/Desktop/runs_until_28_morning.nosync"
+current_dir = "~/Desktop/runs_until_28_morning.nosync"
 
 # #Mihai's dir
-
-current_dir = "C:/Users/mihai/Documents/Faculta/Research Project/cluster/march"
-folders = c("2025-03-09", "2025-03-10", "2025-03-08")
-
+# current_dir = "C:/Users/mihai/Documents/Faculta/Research Project/dsem_modelfit/exp"
+folders1 = c("2025-01-26", "2025-01-27", "2025-01-28")
+folders2 = c("2025-03-08", "2025-03-09", "2025-03-10")
 
 setwd(current_dir)
 
