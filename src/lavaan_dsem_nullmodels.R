@@ -102,65 +102,6 @@ null_model_0A <- function(timepoints) {
 }
 
 
-# null model 0A old version (ingore)
-# null_model_0A_old <- function(timepoints) {
-#   model <- ""
-#
-#   # Define variances and intercepts for all timepoints
-#   for (t in 1:timepoints) {
-#       model <- paste0(model, '
-#       y1t', t, ' ~~ y1t', t, '
-#       y2t', t, ' ~~ y2t', t, '
-#       y3t', t, ' ~~ y3t', t, '
-#       y4t', t, ' ~~ y4t', t, '
-#       y5t', t, ' ~~ y5t', t, '
-#       y6t', t, ' ~~ y6t', t, '\n
-#       '
-#                     )
-#                     }
-#
-#   # Add covariance constraints only if timepoints > 1
-#   if (timepoints > 1) {
-#     for (t in 1:timepoints) {
-#       model <- paste0(model, '
-#       y1t', t, ' ~ 1*1', '
-#       y2t', t, ' ~ 1*1', '
-#       y3t', t, ' ~ 1*1', '
-#       y4t', t, ' ~ 1*1', '
-#       y5t', t, ' ~ 1*1', '
-#       y6t', t, ' ~ 1*1', '\n
-#       '
-#       )
-#     }
-#
-#     for (v in 1:6) { # Loop over variables y1 to y6
-#       var_name <- paste0("y", v, "t") # Append "t" to indicate timepoint
-#       for (t in 1:(timepoints - 1)) { # Loop over time points
-#         next_time <- t + 1
-#         model <- paste0(model,
-#                         sprintf("%s%d ~~ 0.5*%s%d\n", var_name, t, var_name, next_time))
-#       }
-#     }
-#   }
-#
-#   # Add intercept constraints only if timepoints > 1
-#   if (timepoints > 1) {
-#     for (t in 1:(timepoints - 1)) {
-#       model <- paste(model, sprintf('
-#         y1t%d ~ 1*y1t%d
-#         y2t%d ~ 1*y2t%d
-#         y3t%d ~ 1*y3t%d
-#         y4t%d ~ 1*y4t%d
-#         y5t%d ~ 1*y5t%d
-#         y6t%d ~ 1*y6t%d
-#       ', t, t + 1, t, t + 1, t, t + 1, t, t + 1, t, t + 1, t, t + 1), sep = "\n")
-#     }
-#       }
-#
-#   return(model)
-#
-# }
-
 
 # test if it worked:
 # nullmodel_0A <- try(bsem(null_model_0A(Timepoints), ydat2, 
